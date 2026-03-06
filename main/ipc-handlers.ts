@@ -343,7 +343,7 @@ export const registerIpcHandlers = () => {
     return getSaveDir();
   });
 
-  ipcMain.handle('save:chooseDir', async (event) => {
+  ipcMain.handle('save:chooseDir', async event => {
     const {getSaveDir, setSaveDir} = require('./plugins/built-in/save-file-plugin');
     const win = getWindowFromEvent(event);
     const result = await dialog.showOpenDialog(win!, {
