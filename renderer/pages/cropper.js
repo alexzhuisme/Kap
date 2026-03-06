@@ -52,7 +52,7 @@ export default class CropperPage extends React.Component {
       cropperContainer.setActive(true);
     });
 
-    window.kap.ipc.on('window:blur', event => {
+    window.kap.ipc.on('window:blur', _event => {
       cropperContainer.setActive(false);
     });
   }

@@ -35,7 +35,9 @@ export default class ActionBarContainer extends Container {
 
   setDisplay = async display => {
     const {width, height, cropper} = display;
-    let x, y, ratioLocked;
+    let x;
+    let y;
+    let ratioLocked;
 
     if (cropper) {
       const actionBar = await window.kap.ipc.invoke('settings:get', 'actionBar');

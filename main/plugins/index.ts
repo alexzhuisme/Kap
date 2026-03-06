@@ -15,10 +15,20 @@ import {windowManager} from '../windows/manager';
 const got = require('got');
 
 const hiddenPlugins = new Set([
-  'kap-azure', 'kap-cloudinary', 'kap-dropbox', 'kap-fanfou',
-  'kap-gfycat', 'kap-gifski', 'kap-giphy', 'kap-imgur',
-  'kap-kdrive', 'kap-nextcloud', 'kap-s3', 'kap-slate',
-  'kap-transfer', 'kap-vercel'
+  'kap-azure',
+  'kap-cloudinary',
+  'kap-dropbox',
+  'kap-fanfou',
+  'kap-gfycat',
+  'kap-gifski',
+  'kap-giphy',
+  'kap-imgur',
+  'kap-kdrive',
+  'kap-nextcloud',
+  'kap-s3',
+  'kap-slate',
+  'kap-transfer',
+  'kap-vercel'
 ]);
 
 type PackageJson = {

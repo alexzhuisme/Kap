@@ -77,7 +77,7 @@ const closePrefsWindow = () => {
   }
 };
 
-ipcMain.handle('open-preferences', (_, options) => openPrefsWindow(options));
+ipcMain.handle('open-preferences', async (_, options) => openPrefsWindow(options));
 
 windowManager.setPreferences({
   open: openPrefsWindow,

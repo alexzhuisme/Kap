@@ -4,7 +4,7 @@ type Listener = (...args: any[]) => void;
 
 const kapApi = {
   ipc: {
-    invoke: (channel: string, ...args: any[]): Promise<any> =>
+    invoke: async (channel: string, ...args: any[]): Promise<any> =>
       ipcRenderer.invoke(channel, ...args),
 
     send: (channel: string, ...args: any[]): void =>
@@ -38,36 +38,36 @@ const kapApi = {
   },
 
   window: {
-    close: (): Promise<void> => ipcRenderer.invoke('kap:window:close'),
-    minimize: (): Promise<void> => ipcRenderer.invoke('kap:window:minimize'),
-    maximize: (): Promise<void> => ipcRenderer.invoke('kap:window:maximize'),
-    show: (): Promise<void> => ipcRenderer.invoke('kap:window:show'),
-    focus: (): Promise<void> => ipcRenderer.invoke('kap:window:focus'),
-    getBounds: (): Promise<{x: number; y: number; width: number; height: number}> =>
+    close: async (): Promise<void> => ipcRenderer.invoke('kap:window:close'),
+    minimize: async (): Promise<void> => ipcRenderer.invoke('kap:window:minimize'),
+    maximize: async (): Promise<void> => ipcRenderer.invoke('kap:window:maximize'),
+    show: async (): Promise<void> => ipcRenderer.invoke('kap:window:show'),
+    focus: async (): Promise<void> => ipcRenderer.invoke('kap:window:focus'),
+    getBounds: async (): Promise<{x: number; y: number; width: number; height: number}> =>
       ipcRenderer.invoke('kap:window:getBounds'),
-    setBounds: (bounds: any, animate?: boolean): Promise<void> =>
+    setBounds: async (bounds: any, animate?: boolean): Promise<void> =>
       ipcRenderer.invoke('kap:window:setBounds', bounds, animate),
-    getSize: (): Promise<number[]> => ipcRenderer.invoke('kap:window:getSize'),
-    setSize: (width: number, height: number): Promise<void> =>
+    getSize: async (): Promise<number[]> => ipcRenderer.invoke('kap:window:getSize'),
+    setSize: async (width: number, height: number): Promise<void> =>
       ipcRenderer.invoke('kap:window:setSize', width, height),
-    setContentSize: (width: number, height: number): Promise<void> =>
+    setContentSize: async (width: number, height: number): Promise<void> =>
       ipcRenderer.invoke('kap:window:setContentSize', width, height),
-    getContentSize: (): Promise<number[]> => ipcRenderer.invoke('kap:window:getContentSize'),
-    setResizable: (resizable: boolean): Promise<void> =>
+    getContentSize: async (): Promise<number[]> => ipcRenderer.invoke('kap:window:getContentSize'),
+    setResizable: async (resizable: boolean): Promise<void> =>
       ipcRenderer.invoke('kap:window:setResizable', resizable),
-    setFullScreenable: (fullscreenable: boolean): Promise<void> =>
+    setFullScreenable: async (fullscreenable: boolean): Promise<void> =>
       ipcRenderer.invoke('kap:window:setFullScreenable', fullscreenable),
-    setIgnoreMouseEvents: (ignore: boolean, options?: any): Promise<void> =>
+    setIgnoreMouseEvents: async (ignore: boolean, options?: any): Promise<void> =>
       ipcRenderer.invoke('kap:window:setIgnoreMouseEvents', ignore, options),
-    isVisible: (): Promise<boolean> => ipcRenderer.invoke('kap:window:isVisible')
+    isVisible: async (): Promise<boolean> => ipcRenderer.invoke('kap:window:isVisible')
   },
 
   system: {
-    getAccentColor: (): Promise<string> => ipcRenderer.invoke('kap:system:getAccentColor'),
-    getColor: (name: string): Promise<string> => ipcRenderer.invoke('kap:system:getColor', name),
-    getUserDefault: (key: string, type: string): Promise<any> =>
+    getAccentColor: async (): Promise<string> => ipcRenderer.invoke('kap:system:getAccentColor'),
+    getColor: async (name: string): Promise<string> => ipcRenderer.invoke('kap:system:getColor', name),
+    getUserDefault: async (key: string, type: string): Promise<any> =>
       ipcRenderer.invoke('kap:system:getUserDefault', key, type),
-    isDarkMode: (): Promise<boolean> => ipcRenderer.invoke('kap:system:isDarkMode'),
+    isDarkMode: async (): Promise<boolean> => ipcRenderer.invoke('kap:system:isDarkMode'),
     onThemeChanged: (callback: Listener): (() => void) => {
       const wrapped = (_event: IpcRendererEvent, isDark: boolean) => callback(isDark);
       ipcRenderer.on('kap:system:theme-changed', wrapped);
@@ -82,43 +82,43 @@ const kapApi = {
         ipcRenderer.removeListener('kap:system:accent-color-changed', wrapped);
       };
     },
-    subscribeNotification: (name: string): Promise<number> =>
+    subscribeNotification: async (name: string): Promise<number> =>
       ipcRenderer.invoke('kap:system:subscribeNotification', name),
-    unsubscribeNotification: (id: number): Promise<void> =>
+    unsubscribeNotification: async (id: number): Promise<void> =>
       ipcRenderer.invoke('kap:system:unsubscribeNotification', id)
   },
 
   dialog: {
-    showMessageBox: (options: any): Promise<{response: number; checkboxChecked: boolean}> =>
+    showMessageBox: async (options: any): Promise<{response: number; checkboxChecked: boolean}> =>
       ipcRenderer.invoke('kap:dialog:showMessageBox', options),
     showMessageBoxSync: (options: any): number =>
       ipcRenderer.sendSync('kap:dialog:showMessageBoxSync', options),
-    showOpenDialog: (options: any): Promise<{canceled: boolean; filePaths: string[]}> =>
+    showOpenDialog: async (options: any): Promise<{canceled: boolean; filePaths: string[]}> =>
       ipcRenderer.invoke('kap:dialog:showOpenDialog', options),
-    showSaveDialog: (options: any): Promise<{canceled: boolean; filePath?: string}> =>
+    showSaveDialog: async (options: any): Promise<{canceled: boolean; filePath?: string}> =>
       ipcRenderer.invoke('kap:dialog:showSaveDialog', options)
   },
 
   shell: {
-    openExternal: (url: string): Promise<void> => ipcRenderer.invoke('kap:shell:openExternal', url),
-    openPath: (path: string): Promise<string> => ipcRenderer.invoke('kap:shell:openPath', path),
-    showItemInFolder: (path: string): Promise<void> =>
+    openExternal: async (url: string): Promise<void> => ipcRenderer.invoke('kap:shell:openExternal', url),
+    openPath: async (path: string): Promise<string> => ipcRenderer.invoke('kap:shell:openPath', path),
+    showItemInFolder: async (path: string): Promise<void> =>
       ipcRenderer.invoke('kap:shell:showItemInFolder', path)
   },
 
   menu: {
-    popup: (template: any[], position?: {x: number; y: number}): Promise<any> =>
+    popup: async (template: any[], position?: {x: number; y: number}): Promise<any> =>
       ipcRenderer.invoke('kap:menu:popup', template, position)
   },
 
   app: {
-    getVersion: (): Promise<string> => ipcRenderer.invoke('kap:app:getVersion'),
-    getName: (): Promise<string> => ipcRenderer.invoke('kap:app:getName'),
-    getPath: (name: string): Promise<string> => ipcRenderer.invoke('kap:app:getPath', name),
-    getLoginItemSettings: (): Promise<any> => ipcRenderer.invoke('kap:app:getLoginItemSettings'),
-    setLoginItemSettings: (settings: any): Promise<void> =>
+    getVersion: async (): Promise<string> => ipcRenderer.invoke('kap:app:getVersion'),
+    getName: async (): Promise<string> => ipcRenderer.invoke('kap:app:getName'),
+    getPath: async (name: string): Promise<string> => ipcRenderer.invoke('kap:app:getPath', name),
+    getLoginItemSettings: async (): Promise<any> => ipcRenderer.invoke('kap:app:getLoginItemSettings'),
+    setLoginItemSettings: async (settings: any): Promise<void> =>
       ipcRenderer.invoke('kap:app:setLoginItemSettings', settings),
-    quit: (): Promise<void> => ipcRenderer.invoke('kap:app:quit')
+    quit: async (): Promise<void> => ipcRenderer.invoke('kap:app:quit')
   }
 };
 

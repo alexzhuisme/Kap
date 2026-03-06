@@ -101,10 +101,10 @@ export const registerIpcHandlers = () => {
   ipcMain.handle('kap:system:getAccentColor', () => systemPreferences.getAccentColor());
 
   ipcMain.handle('kap:system:getColor', (_, name) =>
-    systemPreferences.getColor(name as any));
+    systemPreferences.getColor(name));
 
   ipcMain.handle('kap:system:getUserDefault', (_, key, type) =>
-    systemPreferences.getUserDefault(key, type as any));
+    systemPreferences.getUserDefault(key, type));
 
   ipcMain.handle('kap:system:isDarkMode', () => nativeTheme.shouldUseDarkColors);
 
@@ -148,32 +148,38 @@ export const registerIpcHandlers = () => {
   });
 
   // --- Dialog ---
-  ipcMain.handle('kap:dialog:showMessageBox', (event, options) => {
+  ipcMain.handle('kap:dialog:showMessageBox', async (event, options) => {
     const win = getWindowFromEvent(event);
-    return win ? dialog.showMessageBox(win, options) : dialog.showMessageBox(options);
+    return win ?
+      dialog.showMessageBox(win, options) :
+      dialog.showMessageBox(options);
   });
 
   ipcMain.on('kap:dialog:showMessageBoxSync', (event, options) => {
     const win = getWindowFromEvent(event);
-    event.returnValue = win
-      ? dialog.showMessageBoxSync(win, options)
-      : dialog.showMessageBoxSync(options);
+    event.returnValue = win ?
+      dialog.showMessageBoxSync(win, options) :
+      dialog.showMessageBoxSync(options);
   });
 
-  ipcMain.handle('kap:dialog:showOpenDialog', (event, options) => {
+  ipcMain.handle('kap:dialog:showOpenDialog', async (event, options) => {
     const win = getWindowFromEvent(event);
-    return win ? dialog.showOpenDialog(win, options) : dialog.showOpenDialog(options);
+    return win ?
+      dialog.showOpenDialog(win, options) :
+      dialog.showOpenDialog(options);
   });
 
-  ipcMain.handle('kap:dialog:showSaveDialog', (event, options) => {
+  ipcMain.handle('kap:dialog:showSaveDialog', async (event, options) => {
     const win = getWindowFromEvent(event);
-    return win ? dialog.showSaveDialog(win, options) : dialog.showSaveDialog(options);
+    return win ?
+      dialog.showSaveDialog(win, options) :
+      dialog.showSaveDialog(options);
   });
 
   // --- Shell ---
-  ipcMain.handle('kap:shell:openExternal', (_, url) => shell.openExternal(url));
-  ipcMain.handle('kap:shell:openPath', (_, path) => shell.openPath(path));
-  ipcMain.handle('kap:shell:showItemInFolder', (_, path) => {
+  ipcMain.handle('kap:shell:openExternal', async (_, url) => shell.openExternal(url));
+  ipcMain.handle('kap:shell:openPath', async (_, path) => shell.openPath(path));
+  ipcMain.handle('kap:shell:showItemInFolder', async (_, path) => {
     shell.showItemInFolder(path);
   });
 
@@ -211,7 +217,7 @@ export const registerIpcHandlers = () => {
   // --- App ---
   ipcMain.handle('kap:app:getVersion', () => app.getVersion());
   ipcMain.handle('kap:app:getName', () => app.getName());
-  ipcMain.handle('kap:app:getPath', (_, name) => app.getPath(name as any));
+  ipcMain.handle('kap:app:getPath', (_, name) => app.getPath(name));
   ipcMain.handle('kap:app:getLoginItemSettings', () => app.getLoginItemSettings());
   ipcMain.handle('kap:app:setLoginItemSettings', (_, loginSettings) => {
     app.setLoginItemSettings(loginSettings);
@@ -221,10 +227,10 @@ export const registerIpcHandlers = () => {
 
   // --- Settings ---
   ipcMain.handle('settings:get', (_, key, defaultValue) => settings.get(key, defaultValue));
-  ipcMain.handle('settings:set', (_, key, value) => settings.set(key as any, value));
-  ipcMain.handle('settings:delete', (_, key) => (settings as any).delete(key));
+  ipcMain.handle('settings:set', (_, key, value) => settings.set(key, value));
+  ipcMain.handle('settings:delete', (_, key) => settings.delete(key));
   ipcMain.handle('settings:getAll', () => settings.store);
-  ipcMain.handle('settings:has', (_, key) => settings.has(key as any));
+  ipcMain.handle('settings:has', (_, key) => settings.has(key));
 
   ipcMain.handle('settings:getShortcuts', () => {
     const {shortcuts} = require('./common/settings');
@@ -232,13 +238,13 @@ export const registerIpcHandlers = () => {
   });
 
   const {flags} = require('./common/flags');
-  ipcMain.handle('flags:get', (_, key: string) => flags.get(key));
-  ipcMain.handle('flags:set', (_, key: string, value: unknown) => flags.set(key as any, value));
+  ipcMain.handle('flags:get', async (_, key: string) => flags.get(key));
+  ipcMain.handle('flags:set', async (_, key: string, value: unknown) => flags.set(key, value));
 
   // --- Devices ---
-  ipcMain.handle('devices:getAudioDevices', () => getAudioDevices());
-  ipcMain.handle('devices:getDefaultInputDevice', () => getDefaultInputDevice());
-  ipcMain.handle('devices:getSelectedInputDeviceId', () => getSelectedInputDeviceId());
+  ipcMain.handle('devices:getAudioDevices', async () => getAudioDevices());
+  ipcMain.handle('devices:getDefaultInputDevice', async () => getDefaultInputDevice());
+  ipcMain.handle('devices:getSelectedInputDeviceId', async () => getSelectedInputDeviceId());
 
   // --- Plugins ---
   ipcMain.handle('plugins:getFromNpm', async () => {
@@ -332,10 +338,10 @@ export const registerIpcHandlers = () => {
   });
 
   // --- Analytics ---
-  ipcMain.handle('analytics:track', (_, event) => track(event));
+  ipcMain.handle('analytics:track', async (_, event) => track(event));
 
   // --- Errors ---
-  ipcMain.handle('errors:show', (_, error) => showError(error));
+  ipcMain.handle('errors:show', async (_, error) => showError(error));
 
   // --- macOS Version ---
   ipcMain.handle('system:macosVersion:isGreaterThanOrEqualTo', (_, version) => {
@@ -348,10 +354,10 @@ export const registerIpcHandlers = () => {
   });
 
   // --- Aperture (recording) ---
-  ipcMain.handle('aperture:startRecording', (_, options) => startRecording(options));
-  ipcMain.handle('aperture:stopRecording', () => stopRecording());
-  ipcMain.handle('aperture:pauseRecording', () => pauseRecording());
-  ipcMain.handle('aperture:resumeRecording', () => resumeRecording());
+  ipcMain.handle('aperture:startRecording', async (_, options) => startRecording(options));
+  ipcMain.handle('aperture:stopRecording', async () => stopRecording());
+  ipcMain.handle('aperture:pauseRecording', async () => pauseRecording());
+  ipcMain.handle('aperture:resumeRecording', async () => resumeRecording());
 
   // --- Windows list ---
   ipcMain.handle('windows:getList', async () => {

@@ -159,7 +159,7 @@ const ConvertButton = () => {
 
   return (
     <>
-      <button type="button" className="discard" onClick={() => window.kap.window.close()}>
+      <button type="button" className="discard" onClick={async () => window.kap.window.close()}>
         Discard
       </button>
       <button type="button" className="start-export" onClick={onClick}>

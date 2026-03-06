@@ -25,7 +25,7 @@
     "build": "yarn build-main && yarn build-renderer",
     "dist": "npm run build && electron-builder",
     "pack": "npm run build && electron-builder --dir",
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "electron-builder install-app-deps && patch-package",
     "sentry-version": "echo \"$npm_package_name@$npm_package_version\"",
     "dev": "next dev renderer"
   },
@@ -120,6 +120,7 @@
     "husky": "^4.2.5",
     "module-alias": "^2.2.2",
     "next": "^10.0.8",
+    "patch-package": "^8.0.0",
     "run-electron": "^1.0.0",
     "sinon": "^9.2.4",
     "tap-xunit": "^2.4.1",

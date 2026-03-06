@@ -3,9 +3,9 @@
  */
 
 export const flags = {
-  get: (key: string): Promise<unknown> =>
+  get: async (key: string): Promise<unknown> =>
     window.kap.ipc.invoke('flags:get', key),
 
-  set: (key: string, value: unknown): Promise<void> =>
+  set: async (key: string, value: unknown): Promise<void> =>
     window.kap.ipc.invoke('flags:set', key, value)
 };

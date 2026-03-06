@@ -44,7 +44,7 @@ const getWindowList = async () => {
       failOnError: false
     }) as Array<{pid: number; icon: Buffer}>;
   } catch {
-    // node-mac-app-icon can fail on newer Electron (e.g. nested electron-util)
+    // Node-mac-app-icon can fail on newer Electron (e.g. nested electron-util)
   }
 
   let maxLastUsed = 0;

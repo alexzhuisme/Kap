@@ -1,7 +1,7 @@
 import {app} from 'electron';
 import http from 'http';
 
-const waitForDevServer = (port: number, maxRetries = 60): Promise<void> =>
+const waitForDevServer = async (port: number, maxRetries = 60): Promise<void> =>
   new Promise((resolve, reject) => {
     let retries = 0;
     const check = () => {
