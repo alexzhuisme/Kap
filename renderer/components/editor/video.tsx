@@ -77,13 +77,22 @@ const Video = () => {
   };
 
   return (
-    <div onContextMenu={onContextMenu}>
+    <div className="video-wrapper" onContextMenu={onContextMenu}>
       <video ref={videoRef} preload="auto" src={src} {...videoProps}/>
       <style jsx>{`
+        .video-wrapper {
+          flex: 1;
+          min-height: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+
         video {
           width: 100%;
           height: 100%;
-          max-height: calc(100vh - 48px);
+          object-fit: contain;
         }
       `}</style>
     </div>

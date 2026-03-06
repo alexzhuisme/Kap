@@ -41,25 +41,35 @@ const EditorConversionView = ({conversionId}: {conversionId: string}) => {
 
   return (
     <div className="editor-conversion-view">
-      <TitleBar
-        conversion={conversion.state}
-        cancel={cancelAndGoBack}
-        copy={() => {
-          conversion.copy();
-        }}
-        retry={() => {
-          conversion.retry();
-        }}
-        showInFolder={showInFolder}/>
-      <VideoPreview conversion={conversion.state} cancel={finalCancel} showInFolder={showInFolder}/>
-      <ConversionDetails conversion={conversion.state} showInFolder={showInFolder}/>
+      <div className="editor-conversion-view-inner">
+        <TitleBar
+          conversion={conversion.state}
+          cancel={cancelAndGoBack}
+          copy={() => {
+            conversion.copy();
+          }}
+          retry={() => {
+            conversion.retry();
+          }}
+          showInFolder={showInFolder}/>
+        <VideoPreview conversion={conversion.state} cancel={finalCancel} showInFolder={showInFolder}/>
+        <ConversionDetails conversion={conversion.state} showInFolder={showInFolder}/>
+      </div>
       <style jsx>{`
         .editor-conversion-view {
-          width: 370px;
+          width: 100%;
+          flex: 1;
+          display: flex;
+          justify-content: center;
+          -webkit-app-region: no-drag;
+        }
+
+        .editor-conversion-view-inner {
+          width: 100%;
+          max-width: 370px;
+          align-self: stretch;
           display: flex;
           flex-direction: column;
-          flex: 1;
-          -webkit-app-region: no-drag;
         }
       `}</style>
     </div>

@@ -15,9 +15,10 @@ const VideoPlayer = () => {
       <style jsx>{`
         .container {
           flex: 1;
+          min-height: 0;
           display: flex;
           position: relative;
-          background: #000;
+          overflow: hidden;
         }
 
         .video-controls {

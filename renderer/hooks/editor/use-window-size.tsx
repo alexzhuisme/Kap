@@ -7,33 +7,26 @@ const DEFAULT_EDITOR_WIDTH = 768;
 const DEFAULT_EDITOR_HEIGHT = 480;
 
 export const useEditorWindowSizeEffect = (isConversionWindowState: boolean) => {
-  const previousWindowSizeRef = useRef<{width: number; height: number}>();
+  const previousWindowSizeRef = useRef<{width: number; height: number} | undefined>(undefined);
 
   useEffect(() => {
-    if (!previousWindowSizeRef.current) {
-      previousWindowSizeRef.current = {
-        width: DEFAULT_EDITOR_WIDTH,
-        height: DEFAULT_EDITOR_HEIGHT
-      };
-      return;
-    }
-
     const update = async () => {
       const bounds = await window.kap.window.getBounds();
 
       if (isConversionWindowState) {
-        previousWindowSizeRef.current = {
-          width: bounds.width,
-          height: bounds.height
-        };
-
+        previousWindowSizeRef.current = {width: bounds.width, height: bounds.height};
         await window.kap.window.setBounds(resizeKeepingCenter(bounds, {width: CONVERSION_WIDTH, height: CONVERSION_HEIGHT}), true);
         await window.kap.window.setResizable(false);
         await window.kap.window.setFullScreenable(false);
       } else {
-        await window.kap.window.setResizable(true);
-        await window.kap.window.setFullScreenable(true);
-        await window.kap.window.setBounds(resizeKeepingCenter(bounds, previousWindowSizeRef.current), true);
+        const size = previousWindowSizeRef.current ?? {width: DEFAULT_EDITOR_WIDTH, height: DEFAULT_EDITOR_HEIGHT};
+        if (previousWindowSizeRef.current) {
+          await window.kap.window.setResizable(true);
+          await window.kap.window.setFullScreenable(true);
+          await window.kap.window.setBounds(resizeKeepingCenter(bounds, size), true);
+        } else {
+          previousWindowSizeRef.current = {width: bounds.width, height: bounds.height};
+        }
       }
     };
 

@@ -16,12 +16,18 @@ const extensionByFormat: Record<Format, string> = {
   [Format.hevc]: 'mp4'
 };
 
-/** Default save path: Downloads folder with video title and format extension. */
-export const getDefaultSavePath = (format: Format, fileName: string): string => {
-  const dir = app.getPath('downloads');
+let customSaveDir: string | undefined;
+
+export const getSaveDir = (): string => customSaveDir ?? app.getPath('downloads');
+
+export const setSaveDir = (dir: string): void => {
+  customSaveDir = dir;
+};
+
+export const getSavePath = (format: Format, fileName: string): string => {
   const baseName = path.parse(fileName).name;
   const ext = extensionByFormat[format] ?? 'mp4';
-  return path.join(dir, `${baseName}.${ext}`);
+  return path.join(getSaveDir(), `${baseName}.${ext}`);
 };
 
 const {Notification, shell} = require('electron');

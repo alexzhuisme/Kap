@@ -23,12 +23,16 @@ const EditorPreview = () => {
           display: flex;
           flex-direction: column;
           flex: 1;
+          min-height: 0;
         }
 
         .preview-hover-container {
           display: flex;
           flex: 1;
+          min-height: 0;
           flex-direction: column;
+          position: relative;
+          overflow: hidden;
         }
 
         .title-bar {

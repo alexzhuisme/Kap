@@ -12,7 +12,7 @@ import {ConversionOptions, ExportState, ExportStatus, Format, CreateExportOption
 import {showError} from './utils/errors';
 import TypedEventEmitter from 'typed-emitter';
 import {plugins} from './plugins';
-import {getDefaultSavePath} from './plugins/built-in/save-file-plugin';
+import {getSavePath} from './plugins/built-in/save-file-plugin';
 import path from 'path';
 import {ensureDockIsShowingSync} from './utils/dock';
 import {windowManager} from './windows/manager';
@@ -263,7 +263,7 @@ export const setUpExportsListeners = () => {
     }
 
     if (pluginOptions.share.pluginName === '_saveToDisk') {
-      extras.targetFilePath = getDefaultSavePath(format, video.title);
+      extras.targetFilePath = getSavePath(format, video.title);
     }
 
     const exportPlugin = plugins.sharePlugins.find(plugin => {

@@ -9,7 +9,6 @@ const Options = () => {
       <style jsx>{`
           .container {
             display: flex;
-            flex: 1;
             padding: 0 16px;
             align-items: center;
             justify-content: space-between;
@@ -17,8 +16,9 @@ const Options = () => {
             background: var(--background-color);
             z-index: 99;
             height: 48px;
-            max-height: 48px;
-            flex-shrink: 0;
+            flex: 0 0 48px;
+            -webkit-app-region: no-drag;
+            box-sizing: border-box;
           }
         `}</style>
     </div>

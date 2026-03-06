@@ -337,6 +337,28 @@ export const registerIpcHandlers = () => {
     return ensureMicrophonePermissions();
   });
 
+  // --- Save directory ---
+  ipcMain.handle('save:getDir', () => {
+    const {getSaveDir} = require('./plugins/built-in/save-file-plugin');
+    return getSaveDir();
+  });
+
+  ipcMain.handle('save:chooseDir', async (event) => {
+    const {getSaveDir, setSaveDir} = require('./plugins/built-in/save-file-plugin');
+    const win = getWindowFromEvent(event);
+    const result = await dialog.showOpenDialog(win!, {
+      defaultPath: getSaveDir(),
+      properties: ['openDirectory', 'createDirectory']
+    });
+
+    if (!result.canceled && result.filePaths.length > 0) {
+      setSaveDir(result.filePaths[0]);
+      return result.filePaths[0];
+    }
+
+    return getSaveDir();
+  });
+
   // --- Analytics ---
   ipcMain.handle('analytics:track', async (_, event) => track(event));
 

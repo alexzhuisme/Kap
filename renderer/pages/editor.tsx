@@ -41,6 +41,31 @@ const EditorPage = () => {
         </ContainerProvider>
       </ConversionIdContextProvider>
       <style jsx global>{`
+        html,
+        body,
+        #__next,
+        .cover-window {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+        }
+
+        #__next {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .cover-window {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          -webkit-app-region: drag;
+          user-select: none;
+          background-color: #222222;
+        }
+
         :root {
           --slider-popup-background: rgba(255, 255, 255, 0.85);
           --slider-background-color: #ffffff;
@@ -60,12 +85,6 @@ const EditorPage = () => {
 
         .progress-bar-container {
           width: 100%;
-        }
-
-        .cover-window {
-          -webkit-app-region: drag;
-          user-select: none;
-          background-color: #222222;
         }
 
         .tooltip {
