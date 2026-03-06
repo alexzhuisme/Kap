@@ -250,7 +250,7 @@ export const setUpExportsListeners = () => {
     }
   });
 
-  ipcMain.handle('create-export', async (event, {
+  ipcMain.handle('create-export', async (_event, {
     filePath, conversionOptions, format, plugins: pluginOptions
   }: CreateExportOptions) => {
     const video = Video.fromId(filePath);
