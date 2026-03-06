@@ -1,8 +1,7 @@
 import {app, BrowserWindow} from 'electron';
-import {is} from 'electron-util';
 
 export const loadRoute = (window: BrowserWindow, routeName: string, {openDevTools}: {openDevTools?: boolean} = {}) => {
-  if (is.development) {
+  if (!app.isPackaged) {
     window.loadURL(`http://localhost:8000/${routeName}`);
     window.webContents.openDevTools({mode: 'detach'});
   } else {

@@ -1,4 +1,3 @@
-import electron from 'electron';
 import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
@@ -6,7 +5,7 @@ import Linkify from 'react-linkify';
 import {HelpIcon} from '../../../vectors';
 
 export const Link = ({href, children}) => (
-  <span onClick={async () => electron.shell.openExternal(href)}>
+  <span onClick={async () => window.kap.shell.openExternal(href)}>
     {children}
     <style jsx>{`
       color: var(--kap);

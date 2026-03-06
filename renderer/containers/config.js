@@ -1,59 +1,47 @@
-import electron from 'electron';
 import {Container} from 'unstated';
 
 export default class ConfigContainer extends Container {
-  remote = electron.remote || false;
-
   state = {selectedTab: 0};
 
-  setPlugin(pluginName) {
-    const {InstalledPlugin} = this.remote.require('./plugins/plugin');
-    this.plugin = new InstalledPlugin(pluginName);
-    this.config = this.plugin.config;
-    this.validators = this.config.validators;
-    this.validate();
+  setPlugin = async pluginName => {
+    const {validators, values} = await window.kap.ipc.invoke('plugins:getConfig', pluginName);
+    this.pluginName = pluginName;
     this.setState({
-      validators: this.validators,
-      values: this.config.store,
+      validators,
+      values,
       pluginName
     });
-  }
+  };
 
-  setEditService = (pluginName, serviceTitle) => {
-    const {InstalledPlugin} = this.remote.require('./plugins/plugin');
-    this.plugin = new InstalledPlugin(pluginName);
-    this.config = this.plugin.config;
-    this.validators = this.config.validators.filter(({title}) => title === serviceTitle);
-    this.validate();
+  setEditService = async (pluginName, serviceTitle) => {
+    const {validators, values} = await window.kap.ipc.invoke('plugins:getConfig', pluginName);
+    this.pluginName = pluginName;
+    this.serviceTitle = serviceTitle;
+    const filteredValidators = validators.filter(({title}) => title === serviceTitle);
     this.setState({
-      validators: this.validators,
-      values: this.config.store,
+      validators: filteredValidators,
+      values,
       pluginName,
       serviceTitle
     });
   };
 
-  validate = () => {
-    for (const validator of this.validators) {
-      validator.validate(this.config.store);
-    }
-  };
+  closeWindow = () => window.kap.window.close();
 
-  closeWindow = () => this.remote.getCurrentWindow().close();
+  openConfig = () => window.kap.ipc.invoke('plugins:openConfigInEditor', this.pluginName);
 
-  openConfig = () => this.plugin.openConfigInEditor();
+  viewOnGithub = () => window.kap.ipc.invoke('plugins:viewOnGithub', this.pluginName);
 
-  viewOnGithub = () => this.plugin.viewOnGithub();
+  onChange = async (key, value) => {
+    await window.kap.ipc.invoke('plugins:setConfig', this.pluginName, key, value);
+    const {validators, values} = await window.kap.ipc.invoke('plugins:getConfig', this.pluginName);
 
-  onChange = (key, value) => {
-    if (value === undefined) {
-      this.config.delete(key);
+    if (this.serviceTitle) {
+      const filteredValidators = validators.filter(({title}) => title === this.serviceTitle);
+      this.setState({validators: filteredValidators, values});
     } else {
-      this.config.set(key, value);
+      this.setState({validators, values});
     }
-
-    this.validate();
-    this.setState({values: this.config.store});
   };
 
   selectTab = selectedTab => {

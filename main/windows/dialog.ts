@@ -1,7 +1,8 @@
 'use strict';
 
-import {BrowserWindow, Rectangle} from 'electron';
-import {ipcMain as ipc} from 'electron-better-ipc';
+import path from 'path';
+import {BrowserWindow, ipcMain, Rectangle} from 'electron';
+import {callRenderer} from '../ipc-handlers';
 import {loadRoute} from '../utils/routes';
 import {windowManager} from './manager';
 
@@ -25,9 +26,9 @@ const showDialog = async (options: DialogOptions) => new Promise<number | void>(
     title: '',
     useContentSize: true,
     webPreferences: {
-      nodeIntegration: true,
-      enableRemoteModule: true,
-      contextIsolation: false
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, '..', 'preload.js')
     }
   });
 
@@ -48,7 +49,7 @@ const showDialog = async (options: DialogOptions) => new Promise<number | void>(
 
     const cancelButton = buttons.findIndex(({label}) => label === 'Cancel');
 
-    const {width, height} = await ipc.callRenderer<any, Rectangle>(dialogWindow, 'data', {
+    const {width, height} = await callRenderer<Rectangle>(dialogWindow, 'data', {
       cancelId: cancelButton > 0 ? cancelButton : undefined,
       ...options,
       ...newOptions,
@@ -65,7 +66,9 @@ const showDialog = async (options: DialogOptions) => new Promise<number | void>(
     });
   };
 
-  const unsubscribe = ipc.answerRenderer(`dialog-action-${dialogWindow.id}`, async (index: number) => {
+  const channelName = `dialog-action-${dialogWindow.id}`;
+
+  const handler = async (_: any, index: number) => {
     if (buttons[index]) {
       if (buttons[index].action) {
         wasActionTaken = false;
@@ -80,11 +83,13 @@ const showDialog = async (options: DialogOptions) => new Promise<number | void>(
     } else {
       cleanup();
     }
-  });
+  };
+
+  ipcMain.handle(channelName, handler);
 
   const cleanup = (value?: number) => {
     wasActionTaken = true;
-    unsubscribe();
+    ipcMain.removeHandler(channelName);
     dialogWindow.close();
     resolve(value);
   };

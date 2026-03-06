@@ -1,6 +1,5 @@
 import React from 'react';
 import {Provider} from 'unstated';
-import {ipcRenderer as ipc} from 'electron-better-ipc';
 
 import {ConfigContainer} from '../containers';
 import Config from '../components/config';
@@ -12,12 +11,12 @@ export default class ConfigPage extends React.Component {
   state = {title: ''};
 
   componentDidMount() {
-    ipc.answerMain('plugin', pluginName => {
+    window.kap.ipc.on('plugin', pluginName => {
       configContainer.setPlugin(pluginName);
       this.setState({title: pluginName.replace(/^kap-/, '')});
     });
 
-    ipc.answerMain('edit-service', ({pluginName, serviceTitle}) => {
+    window.kap.ipc.on('edit-service', ({pluginName, serviceTitle}) => {
       configContainer.setEditService(pluginName, serviceTitle);
       this.setState({title: serviceTitle});
     });

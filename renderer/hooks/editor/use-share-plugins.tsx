@@ -1,6 +1,4 @@
 import OptionsContainer from 'components/editor/options-container';
-import {remote} from 'electron';
-import {ipcRenderer} from 'electron-better-ipc';
 import {useMemo} from 'react';
 
 const useSharePlugins = () => {
@@ -26,7 +24,7 @@ const useSharePlugins = () => {
             serviceTitle: plugin.title,
             app
           },
-          icon: remote.nativeImage.createFromDataURL(app.icon).resize({width: 16, height: 16})
+          iconDataUrl: app.icon
         }));
 
         if (plugin.apps[0].isDefault) {
@@ -67,7 +65,7 @@ const useSharePlugins = () => {
         label: 'Get Plugins…',
         checked: false,
         click: () => {
-          ipcRenderer.callMain('open-preferences', {category: 'plugins', tab: 'discover'});
+          window.kap.ipc.invoke('open-preferences', {category: 'plugins', tab: 'discover'});
         }
       } as any);
     }

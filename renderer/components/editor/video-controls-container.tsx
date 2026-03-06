@@ -1,11 +1,10 @@
 import {createContainer} from 'unstated-next';
-import electron from 'electron';
 import {useRef, useState, useEffect} from 'react';
 
 const useVideoControls = () => {
   const videoRef = useRef<HTMLVideoElement>();
-  const currentWindow = electron.remote.getCurrentWindow();
   const wasPaused = useRef(true);
+  const isFocused = useRef(true);
   const transitioningPauseState = useRef<Promise<void>>();
 
   const [hasStarted, setHasStarted] = useState(false);
@@ -55,7 +54,7 @@ const useVideoControls = () => {
   const videoProps = {
     onCanPlayThrough: hasStarted ? undefined : () => {
       setHasStarted(true);
-      if (currentWindow.isFocused()) {
+      if (isFocused.current) {
         play();
       }
     },
@@ -75,25 +74,24 @@ const useVideoControls = () => {
   };
 
   useEffect(() => {
-    const blurListener = () => {
+    const unsubscribeBlur = window.kap.ipc.on('blur', () => {
       wasPaused.current = videoRef.current?.paused;
+      isFocused.current = false;
       if (!wasPaused.current) {
         pause();
       }
-    };
+    });
 
-    const focusListener = () => {
+    const unsubscribeFocus = window.kap.ipc.on('focus', () => {
+      isFocused.current = true;
       if (!wasPaused.current) {
         play();
       }
-    };
-
-    currentWindow.addListener('blur', blurListener);
-    currentWindow.addListener('focus', focusListener);
+    });
 
     return () => {
-      currentWindow.removeListener('blur', blurListener);
-      currentWindow.removeListener('focus', focusListener);
+      unsubscribeBlur();
+      unsubscribeFocus();
     };
   }, []);
 

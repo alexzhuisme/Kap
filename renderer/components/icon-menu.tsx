@@ -1,11 +1,11 @@
-import {MenuItemConstructorOptions} from 'electron';
 import React, {FunctionComponent, useRef} from 'react';
 import {SvgProps} from 'vectors/svg';
 
 type MenuProps = {
   onOpen: (options: {x: number; y: number}) => void;
 } | {
-  template: MenuItemConstructorOptions[];
+  template: any[];
+  onSelect?: (value: any) => void;
 };
 
 type IconMenuProps = SvgProps & MenuProps & {
@@ -17,7 +17,7 @@ const IconMenu: FunctionComponent<IconMenuProps> = props => {
   const {icon: Icon, fillParent, ...iconProps} = props;
   const container = useRef(null);
 
-  const openMenu = () => {
+  const openMenu = async () => {
     const boundingRect = container.current.children[0].getBoundingClientRect();
     const {bottom, left} = boundingRect;
 
@@ -27,12 +27,14 @@ const IconMenu: FunctionComponent<IconMenuProps> = props => {
         y: Math.round(bottom)
       });
     } else {
-      const {api} = require('electron-util');
-      const menu = api.Menu.buildFromTemplate(props.template);
-      menu.popup({
+      const result = await window.kap.menu.popup(props.template, {
         x: Math.round(left),
         y: Math.round(bottom)
       });
+
+      if (result !== null && 'onSelect' in props && props.onSelect) {
+        props.onSelect(result);
+      }
     }
   };
 

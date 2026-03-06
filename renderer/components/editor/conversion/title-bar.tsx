@@ -1,36 +1,34 @@
 import TrafficLights from 'components/traffic-lights';
 import {BackPlainIcon, MoreIcon} from 'vectors';
 import {UseConversionState} from 'hooks/editor/use-conversion';
-import {flags} from '../../../common/flags';
-import {MenuItemConstructorOptions, remote} from 'electron';
+import {flags} from 'utils/flags-ipc';
 import {ExportStatus} from '../../../common/types';
 import {useMemo} from 'react';
-import {template} from 'lodash';
 import IconMenu from '../../icon-menu';
 
 const TitleBar = ({conversion, cancel, copy, retry, showInFolder}: {conversion: UseConversionState; cancel: () => any; copy: () => any; retry: () => any; showInFolder: () => void}) => {
-  const {api} = require('electron-util');
   const shouldClose = async () => {
-    if (conversion.status === ExportStatus.inProgress && !flags.get('backgroundEditorConversion')) {
-      await api.dialog.showMessageBox(remote.getCurrentWindow(), {
+    const backgroundConversion = await flags.get('backgroundEditorConversion');
+    if (conversion.status === ExportStatus.inProgress && !backgroundConversion) {
+      await window.kap.dialog.showMessageBox({
         type: 'info',
         message: 'Your export will continue in the background. You can access it through the Export History window.',
         buttons: ['Ok'],
         defaultId: 0
       });
-      flags.set('backgroundEditorConversion', true);
+      await flags.set('backgroundEditorConversion', true);
     }
 
     return true;
   };
 
   const menuTemplate = useMemo(() => {
-    const template: MenuItemConstructorOptions[] = [];
+    const template: any[] = [];
 
     if (conversion?.canCopy) {
       template.push({
         label: 'Copy',
-        click: () => copy()
+        value: 'copy'
       }, {
         type: 'separator'
       });
@@ -39,12 +37,20 @@ const TitleBar = ({conversion, cancel, copy, retry, showInFolder}: {conversion: 
     if (conversion?.status === ExportStatus.completed) {
       template.push({
         label: 'Show in Finder',
-        click: () => showInFolder()
+        value: 'showInFolder'
       });
     }
 
     return template;
   }, [conversion?.canCopy, conversion?.status]);
+
+  const handleMenuSelect = (value: string) => {
+    if (value === 'copy') {
+      copy();
+    } else if (value === 'showInFolder') {
+      showInFolder();
+    }
+  };
 
   const canRetry = [ExportStatus.canceled, ExportStatus.failed].includes(conversion?.status);
 
@@ -68,6 +74,7 @@ const TitleBar = ({conversion, cancel, copy, retry, showInFolder}: {conversion: 
                 activeFill="white"
                 size="20px"
                 template={menuTemplate}
+                onSelect={handleMenuSelect}
               />
             </div>
           )

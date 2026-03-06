@@ -3,7 +3,7 @@ import {UseConversion, UseConversionState} from 'hooks/editor/use-conversion';
 import {ExportStatus} from 'common/types';
 import useEditorWindowState from 'hooks/editor/use-editor-window-state';
 import useConversionIdContext from 'hooks/editor/use-conversion-id';
-import {flags} from '../../../common/flags';
+import {flags} from 'utils/flags-ipc';
 import ReactTooltip from 'react-tooltip';
 import {useEffect, useRef, useState} from 'react';
 import classNames from 'classnames';
@@ -11,8 +11,14 @@ import classNames from 'classnames';
 const VideoPreview = ({conversion, cancel, showInFolder}: {conversion: UseConversionState; cancel: () => any; showInFolder: () => any}) => {
   const {conversionId} = useConversionIdContext();
   const {filePath} = useEditorWindowState();
-  const [tooltipShowing, setTooltipShowing] = useState(!flags.get('editorDragTooltip'));
+  const [tooltipShowing, setTooltipShowing] = useState(true);
   const tooltipRef = useRef();
+
+  useEffect(() => {
+    flags.get('editorDragTooltip').then((value: unknown) => {
+      setTooltipShowing(!value);
+    });
+  }, []);
   const src = `file://${filePath}`;
 
   const percentage = conversion?.progress ?? 0;
@@ -20,9 +26,7 @@ const VideoPreview = ({conversion, cancel, showInFolder}: {conversion: UseConver
 
   const onDragStart = (event: any) => {
     event.preventDefault();
-    // Has to be the electron one for this
-    const {ipcRenderer} = require('electron');
-    ipcRenderer.send('drag-export', conversionId);
+    window.kap.ipc.send('drag-export', conversionId);
   };
 
   useEffect(() => {
@@ -44,6 +48,7 @@ const VideoPreview = ({conversion, cancel, showInFolder}: {conversion: UseConver
 
   const onTooltipHide = () => {
     flags.set('editorDragTooltip', true);
+    setTooltipShowing(false);
   };
 
   return (

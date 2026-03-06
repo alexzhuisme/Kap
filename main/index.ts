@@ -1,5 +1,5 @@
 import {app} from 'electron';
-import {is, enforceMacOSAppLocation} from 'electron-util';
+import {enforceMacOSAppLocation} from 'electron-util';
 import log from 'electron-log';
 import {autoUpdater} from 'electron-updater';
 import toMilliseconds from '@sindresorhus/to-milliseconds';
@@ -7,11 +7,9 @@ import toMilliseconds from '@sindresorhus/to-milliseconds';
 import './windows/load';
 import './utils/sentry';
 
-require('electron-timber').hookConsole({main: true, renderer: true});
-
 import {settings} from './common/settings';
 import {plugins} from './plugins';
-import {initializeTray} from './tray';
+import {initializeTray, setRendererReady} from './tray';
 import {initializeDevices} from './utils/devices';
 import {initializeAnalytics, track} from './common/analytics';
 import {initializeGlobalAccelerators} from './global-accelerators';
@@ -24,8 +22,8 @@ import {setUpExportsListeners} from './export';
 import {windowManager} from './windows/manager';
 import {setupProtocol} from './utils/protocol';
 import {stopRecordingWithNoEdit} from './aperture';
-
-const prepareNext = require('electron-next');
+import {prepareRenderer} from './utils/next-loader';
+import {registerIpcHandlers} from './ipc-handlers';
 
 const filesToOpen: string[] = [];
 
@@ -45,7 +43,7 @@ app.on('open-file', (event, path) => {
 });
 
 const initializePlugins = async () => {
-  if (!is.development) {
+  if (app.isPackaged) {
     try {
       await plugins.upgrade();
     } catch (error) {
@@ -55,7 +53,7 @@ const initializePlugins = async () => {
 };
 
 const checkForUpdates = () => {
-  if (is.development) {
+  if (!app.isPackaged) {
     return false;
   }
 
@@ -85,6 +83,7 @@ const checkForUpdates = () => {
 
   // Initialize remote states
   setupRemoteStates();
+  registerIpcHandlers();
 
   setupProtocol();
 
@@ -94,15 +93,20 @@ const checkForUpdates = () => {
   // Ensure the app is in the Applications folder
   enforceMacOSAppLocation();
 
-  await prepareNext('./renderer');
-
-  // Ensure all plugins are up to date
-  initializePlugins();
-  initializeDevices();
-  initializeAnalytics();
+  // Show tray icon and register shortcuts immediately so the app feels responsive
   initializeTray();
   initializeGlobalAccelerators();
+  initializeDevices();
+  initializeAnalytics();
   setUpExportsListeners();
+
+  // Prepare the Next.js renderer and plugin upgrades in parallel
+  await Promise.all([
+    prepareRenderer('./renderer'),
+    initializePlugins()
+  ]);
+
+  setRendererReady();
 
   if (!app.isDefaultProtocolClient('kap')) {
     app.setAsDefaultProtocolClient('kap');
@@ -124,9 +128,8 @@ const checkForUpdates = () => {
   checkForUpdates();
 })();
 
-app.on('window-all-closed', (event: any) => {
+app.on('window-all-closed', () => {
   app.dock.hide();
-  event.preventDefault();
 });
 
 app.on('will-finish-launching', () => {

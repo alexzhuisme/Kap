@@ -1,4 +1,5 @@
 
+import path from 'path';
 import {windowManager} from './manager';
 import {BrowserWindow, systemPreferences, dialog, screen, Display, app} from 'electron';
 import delay from 'delay';
@@ -46,9 +47,9 @@ const openCropper = (display: Display, activeDisplayId?: number) => {
     transparent: true,
     show: false,
     webPreferences: {
-      nodeIntegration: true,
-      enableRemoteModule: true,
-      contextIsolation: false
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, '..', 'preload.js')
     }
   });
 

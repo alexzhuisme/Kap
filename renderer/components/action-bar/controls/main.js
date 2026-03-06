@@ -1,4 +1,3 @@
-import electron from 'electron';
 import PropTypes from 'prop-types';
 import React from 'react';
 import css from 'styled-jsx/css';
@@ -24,27 +23,28 @@ const mainStyle = css`
 
 const MainControls = {};
 
-const remote = electron.remote || false;
-let menu;
-
-const buildMenu = async ({selectedApp}) => {
-  const {buildWindowsMenu} = remote.require('./utils/windows');
-  menu = await buildWindowsMenu(selectedApp);
-};
-
 class Left extends React.Component {
   state = {};
 
-  static getDerivedStateFromProps(nextProps, previousState) {
-    const {selectedApp} = nextProps;
+  openWindowsMenu = async () => {
+    const {selectedApp} = this.props;
+    const windows = await window.kap.ipc.invoke('windows:getList');
+    const template = windows.map(win => ({
+      label: win.ownerName,
+      value: win,
+      type: 'radio',
+      checked: win.ownerName === selectedApp
+    }));
 
-    if (selectedApp !== previousState.selectedApp) {
-      buildMenu({selectedApp});
-      return {selectedApp};
+    const clicked = await window.kap.menu.popup(template);
+    if (clicked) {
+      const cropperContainer = CropperContainer.instances && CropperContainer.instances[0];
+      if (cropperContainer) {
+        cropperContainer.selectApp(clicked);
+        cropperContainer.setActive(true);
+      }
     }
-
-    return null;
-  }
+  };
 
   render() {
     const {toggleAdvanced, selectedApp, advanced} = this.props;
@@ -54,7 +54,7 @@ class Left extends React.Component {
         <div className="crop">
           <CropIcon tabIndex={advanced ? -1 : 0} onClick={toggleAdvanced}/>
         </div>
-        <IconMenu isMenu icon={ApplicationsIcon} tabIndex={advanced ? -1 : 0} active={Boolean(selectedApp)} onOpen={menu && menu.popup}/>
+        <IconMenu isMenu icon={ApplicationsIcon} tabIndex={advanced ? -1 : 0} active={Boolean(selectedApp)} onOpen={this.openWindowsMenu}/>
         <style jsx>{mainStyle}</style>
         <style jsx>{`
           .crop {
@@ -86,8 +86,7 @@ MainControls.Left = connect(
 
 class Right extends React.Component {
   onCogMenuClick = async () => {
-    const cogMenu = await electron.remote.require('./menus/cog').getCogMenu();
-    cogMenu.popup();
+    await window.kap.ipc.invoke('cog:popupMenu');
   };
 
   render() {

@@ -1,4 +1,3 @@
-import electron from 'electron';
 import React from 'react';
 import PropTypes from 'prop-types';
 import tildify from 'tildify';
@@ -22,14 +21,13 @@ class General extends React.Component {
 
   state = {};
 
-  componentDidMount() {
-    this.setState({
-      showCursorSupported: electron.remote.require('macos-version').isGreaterThanOrEqualTo('10.13')
-    });
+  async componentDidMount() {
+    const showCursorSupported = await window.kap.ipc.invoke('system:macosVersion:isGreaterThanOrEqualTo', '10.13');
+    this.setState({showCursorSupported});
   }
 
   openKapturesDir = () => {
-    electron.shell.openPath(this.props.kapturesDir);
+    window.kap.shell.openPath(this.props.kapturesDir);
   };
 
   render() {

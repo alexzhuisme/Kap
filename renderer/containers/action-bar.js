@@ -1,21 +1,17 @@
-import electron from 'electron';
 import {Container} from 'unstated';
 
 const barWidth = 464;
 const barHeight = 64;
 
 export default class ActionBarContainer extends Container {
-  remote = electron.remote || false;
-
   constructor() {
     super();
 
-    if (!this.remote) {
+    if (typeof window === 'undefined' || !window.kap) {
       this.state = {};
       return;
     }
 
-    this.settings = this.remote.require('./common/settings').settings;
     this.state = {
       cropperWidth: '',
       cropperHeight: ''
@@ -37,9 +33,14 @@ export default class ActionBarContainer extends Container {
     this.setState({cropperHeight});
   };
 
-  setDisplay = display => {
+  setDisplay = async display => {
     const {width, height, cropper} = display;
-    const {x, y, ratioLocked} = cropper ? this.settings.get('actionBar') : {};
+    let x, y, ratioLocked;
+
+    if (cropper) {
+      const actionBar = await window.kap.ipc.invoke('settings:get', 'actionBar');
+      ({x, y, ratioLocked} = actionBar || {});
+    }
 
     this.setState({
       screenWidth: width,
@@ -71,10 +72,10 @@ export default class ActionBarContainer extends Container {
     this.cropperContainer = cropperContainer;
   };
 
-  updateSettings = updates => {
+  updateSettings = async updates => {
     const {x, y, ratioLocked} = this.state;
 
-    this.settings.set('actionBar', {
+    await window.kap.ipc.invoke('settings:set', 'actionBar', {
       x,
       y,
       ratioLocked,

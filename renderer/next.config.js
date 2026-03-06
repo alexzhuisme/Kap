@@ -7,13 +7,22 @@ module.exports = (nextConfig) => {
         test: /\.+(js|jsx|mjs|ts|tsx)$/,
         loader: options.defaultLoaders.babel,
         include: [
-          path.join(__dirname, '..', 'main', 'common'),
-          path.join(__dirname, '..', 'main', 'remote-states', 'use-remote-state.ts')
+          path.join(__dirname, '..', 'main', 'common')
         ]
       });
 
-      config.target = 'electron-renderer';
       config.devtool = 'cheap-module-source-map';
+
+      // Stub Node built-ins in client bundle (deps like atomically require 'fs')
+      if (!options.isServer) {
+        config.node = {
+          ...config.node,
+          fs: 'empty',
+          path: 'empty',
+          net: 'empty',
+          tls: 'empty'
+        };
+      }
 
       if (typeof nextConfig.webpack === 'function') {
         return nextConfig.webpack(config, options);

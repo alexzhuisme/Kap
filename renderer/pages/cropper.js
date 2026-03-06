@@ -1,4 +1,3 @@
-import electron from 'electron';
 import React from 'react';
 import {Provider} from 'unstated';
 
@@ -22,46 +21,39 @@ actionBarContainer.bindCropper(cropperContainer);
 let lastRatioLockState = null;
 
 export default class CropperPage extends React.Component {
-  remote = electron.remote || false;
-
   dev = false;
 
   constructor(props) {
     super(props);
 
-    if (!electron.ipcRenderer) {
+    if (typeof window === 'undefined' || !window.kap) {
       return;
     }
 
-    const {ipcRenderer, remote} = electron;
-
-    ipcRenderer.on('display', (_, display) => {
+    window.kap.ipc.on('display', display => {
       cropperContainer.setDisplay(display);
       actionBarContainer.setDisplay(display);
     });
 
-    ipcRenderer.on('select-app', (_, app) => {
+    window.kap.ipc.on('select-app', app => {
       cropperContainer.selectApp(app);
       cropperContainer.setActive(true);
     });
 
-    ipcRenderer.on('blur', () => {
+    window.kap.ipc.on('blur', () => {
       cropperContainer.setActive(false);
     });
 
-    ipcRenderer.on('start-recording', () => {
+    window.kap.ipc.on('start-recording', () => {
       cropperContainer.setRecording();
     });
 
-    const window = remote.getCurrentWindow();
-    window.on('focus', () => {
+    window.kap.ipc.on('window:focus', () => {
       cropperContainer.setActive(true);
     });
 
-    window.on('blur', event => {
-      if (!event.defaultPrevented) {
-        cropperContainer.setActive(false);
-      }
+    window.kap.ipc.on('window:blur', event => {
+      cropperContainer.setActive(false);
     });
   }
 
@@ -78,7 +70,7 @@ export default class CropperPage extends React.Component {
   handleKeyEvent = event => {
     switch (event.key) {
       case 'Escape':
-        this.remote.getCurrentWindow().close();
+        window.kap.window.close();
         break;
       case 'Shift':
         if (event.type === 'keydown' && !event.defaultPrevented) {
@@ -94,7 +86,7 @@ export default class CropperPage extends React.Component {
         cropperContainer.toggleResizeFromCenter(event.type === 'keydown');
         break;
       case 'i':
-        this.remote.getCurrentWindow().setIgnoreMouseEvents(true);
+        window.kap.window.setIgnoreMouseEvents(true);
         this.dev = !this.dev;
         break;
       default:

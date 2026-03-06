@@ -2,10 +2,8 @@ import {EditorWindowState} from '../common/types';
 import type {Video} from '../video';
 import KapWindow from './kap-window';
 import {MenuItemId} from '../menus/utils';
-import {BrowserWindow, dialog} from 'electron';
-import {is} from 'electron-util';
+import {BrowserWindow, dialog, app} from 'electron';
 import fs from 'fs';
-import {saveSnapshot} from '../utils/image-preview';
 import {windowManager} from './manager';
 
 const pify = require('pify');
@@ -30,6 +28,7 @@ const open = async (video: Video) => {
 
   const editorKapWindow = new KapWindow<EditorWindowState>({
     title: video.title,
+    waitForMount: false,
     // TODO: Return those to the original values when we are able to resize below min size
     // Upstream issue: https://github.com/electron/electron/issues/27025
     // minWidth: MIN_VIDEO_WIDTH,
@@ -40,7 +39,7 @@ const open = async (video: Video) => {
     height: MIN_WINDOW_HEIGHT,
     backgroundColor: '#222222',
     webPreferences: {
-      webSecurity: !is.development // Disable webSecurity in dev to load video over file:// protocol while serving over insecure http, this is not needed in production where we use file:// protocol for html serving.
+      webSecurity: app.isPackaged
     },
     frame: false,
     transparent: true,
@@ -111,15 +110,11 @@ const open = async (video: Video) => {
   });
 
   editorWindow.on('blur', () => {
-    editorKapWindow.callRenderer('blur');
+    editorKapWindow.sendToRenderer('blur');
   });
 
   editorWindow.on('focus', () => {
-    editorKapWindow.callRenderer('focus');
-  });
-
-  editorKapWindow.answerRenderer('save-snapshot', (time: number) => {
-    saveSnapshot(video, time);
+    editorKapWindow.sendToRenderer('focus');
   });
 };
 

@@ -1,4 +1,3 @@
-import electron from 'electron';
 import React from 'react';
 import PropTypes from 'prop-types';
 
@@ -84,7 +83,7 @@ const Plugin = ({plugin, checked, disabled, onTransitionEnd, onClick, loading, o
 
   const onTitleClick = () => {
     if (plugin.link) {
-      electron.shell.openExternal(plugin.link);
+      window.kap.shell.openExternal(plugin.link);
     }
   };
 

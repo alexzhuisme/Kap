@@ -115,7 +115,6 @@ const ShortcutInput = ({shortcut = '', onChange, tabIndex}) => {
       }
     }
 
-    // Handled by the `onPaste` event
     if (metaKeys.length === 1 && metaKey && key.toUpperCase() === 'V') {
       return;
     }
@@ -153,20 +152,21 @@ const ShortcutInput = ({shortcut = '', onChange, tabIndex}) => {
     }
   };
 
-  const openMenu = () => {
-    const {Menu} = require('electron').remote;
-    const menu = Menu.buildFromTemplate(presets.map(accelerator => ({
+  const openMenu = async () => {
+    const template = presets.map(accelerator => ({
       label: accelerator.split('+').map(key => metaCharacters.get(key) || key).join(''),
-      click: () => {
-        onChange(accelerator);
-      }
-    })));
+      value: accelerator
+    }));
 
     const {left, top} = boxRef.current.getBoundingClientRect();
-    menu.popup({
+    const clickedValue = await window.kap.menu.popup(template, {
       x: Math.round(left),
       y: Math.round(top)
     });
+
+    if (clickedValue !== null && clickedValue !== undefined) {
+      onChange(clickedValue);
+    }
   };
 
   const className = classNames('box', {invalid: false});

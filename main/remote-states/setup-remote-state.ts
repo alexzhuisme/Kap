@@ -1,6 +1,6 @@
 import {RemoteState, getChannelNames} from './utils';
-import {ipcMain} from 'electron-better-ipc';
-import {BrowserWindow} from 'electron';
+import {ipcMain, BrowserWindow} from 'electron';
+import {sendToRenderer} from '../ipc-handlers';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 const setupRemoteState = async <State, Actions extends Record<string, Function>>(name: string, callback: RemoteState<State, Actions>) => {
@@ -13,7 +13,7 @@ const setupRemoteState = async <State, Actions extends Record<string, Function>>
       const renderers = renderersMap.get(id) ?? new Set();
 
       for (const renderer of renderers) {
-        ipcMain.callRenderer(renderer, channelNames.stateUpdated, {state, id});
+        sendToRenderer(renderer, channelNames.stateUpdated, {state, id});
       }
 
       return;
@@ -22,7 +22,7 @@ const setupRemoteState = async <State, Actions extends Record<string, Function>>
     for (const [windowId, renderers] of renderersMap.entries()) {
       for (const renderer of renderers) {
         if (renderer && !renderer.isDestroyed()) {
-          ipcMain.callRenderer(renderer, channelNames.stateUpdated, {state: state ?? (await getState?.(windowId))});
+          sendToRenderer(renderer, channelNames.stateUpdated, {state: state ?? (await getState?.(windowId))});
         } else {
           renderers.delete(renderer);
         }
@@ -32,7 +32,8 @@ const setupRemoteState = async <State, Actions extends Record<string, Function>>
 
   const {getState, actions = {}, subscribe} = await callback(sendUpdate);
 
-  ipcMain.answerRenderer(channelNames.subscribe, (customId: string, window: BrowserWindow) => {
+  ipcMain.handle(channelNames.subscribe, (event, customId: string) => {
+    const window = BrowserWindow.fromWebContents(event.sender)!;
     const id = customId ?? window.id.toString();
 
     if (!renderersMap.has(id)) {
@@ -50,12 +51,14 @@ const setupRemoteState = async <State, Actions extends Record<string, Function>>
     return Object.keys(actions);
   });
 
-  ipcMain.answerRenderer(channelNames.getState, async (customId: string, window: BrowserWindow) => {
+  ipcMain.handle(channelNames.getState, async (event, customId: string) => {
+    const window = BrowserWindow.fromWebContents(event.sender)!;
     const id = customId ?? window.id.toString();
     return getState(id);
   });
 
-  ipcMain.answerRenderer(channelNames.callAction, ({key, data, id: customId}: any, window: BrowserWindow) => {
+  ipcMain.handle(channelNames.callAction, (event, {key, data, id: customId}: any) => {
+    const window = BrowserWindow.fromWebContents(event.sender)!;
     const id = customId || window.id.toString();
     return (actions as any)[key]?.(id, ...data);
   });

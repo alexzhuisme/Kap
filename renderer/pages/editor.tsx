@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import {useEffect} from 'react';
 // Import EditorPreview from '../components/editor/editor-preview';
 import combineUnstatedContainers from '../utils/combine-unstated-containers';
 import VideoMetadataContainer from '../components/editor/video-metadata-container';
@@ -18,6 +19,12 @@ const ContainerProvider = combineUnstatedContainers([
 
 const EditorPage = () => {
   const args = useEditorWindowState();
+
+  useEffect(() => {
+    if (args) {
+      window.kap.ipc.invoke('kap-window-mount');
+    }
+  }, [args]);
 
   if (!args) {
     return null;
@@ -47,21 +54,12 @@ const EditorPage = () => {
           --slider-thumb-color: var(--storm);
         }
 
-        .preview-hover-container:hover .video-controls {
+        .preview-hover-container .video-controls {
           bottom: 0;
         }
 
-        .preview-hover-container:not(:hover) .progress-bar-container {
-          bottom: 64px;
-          width: 100%
-        }
-
-        .preview-hover-container:not(:hover) .progress-bar-container .progress-bar {
-          border-radius: 0;
-        }
-
-        .preview-hover-container:not(:hover) .progress-bar-container .slider {
-          display: none;
+        .progress-bar-container {
+          width: 100%;
         }
 
         .cover-window {

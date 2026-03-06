@@ -1,5 +1,3 @@
-import {remote} from 'electron';
-
 export const useCurrentWindow = () => {
-  return remote.getCurrentWindow();
+  return window.kap.window;
 };

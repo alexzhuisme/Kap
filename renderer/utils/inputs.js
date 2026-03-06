@@ -1,4 +1,3 @@
-import electron from 'electron';
 import _ from 'lodash';
 
 let screenWidth = 0;
@@ -9,7 +8,6 @@ export const setScreenSize = (width, height) => {
   screenHeight = height;
 };
 
-const {remote} = electron;
 const debounceTimeout = 500;
 export const minWidth = 20;
 export const minHeight = 20;
@@ -75,7 +73,6 @@ const handleWidthInput = _.debounce(({
 
     setBounds(resizeTo(bounds, target));
   } else {
-    // If it's not an integer keep last valid value
     shake(widthInput.current);
     setBounds();
   }
@@ -122,7 +119,6 @@ const handleHeightInput = _.debounce(({
 
     setBounds(resizeTo(bounds, target));
   } else {
-    // If it's not an integer keep last valid value
     shake(heightInput.current);
     setBounds();
   }
@@ -137,24 +133,17 @@ export const RATIOS = [
   '1:1'
 ];
 
-const buildAspectRatioMenu = ({setRatio, ratio}) => {
-  if (!remote) {
-    return;
-  }
-
-  const {Menu, MenuItem} = remote;
+const buildAspectRatioMenu = ({ratio}) => {
   const selectedRatio = ratio.join(':');
-  const menu = new Menu();
+  const template = [];
 
   for (const r of RATIOS) {
-    menu.append(
-      new MenuItem({
-        label: r,
-        type: 'radio',
-        checked: r === selectedRatio,
-        click: () => setRatio(r.split(':').map(d => Number.parseInt(d, 10)))
-      })
-    );
+    template.push({
+      label: r,
+      type: 'radio',
+      checked: r === selectedRatio,
+      value: r
+    });
   }
 
   const customOption = RATIOS.includes(selectedRatio) ? {
@@ -165,11 +154,12 @@ const buildAspectRatioMenu = ({setRatio, ratio}) => {
   } : {
     label: `Custom ${selectedRatio}`,
     type: 'radio',
-    checked: true
+    checked: true,
+    value: selectedRatio
   };
 
-  menu.append(new MenuItem(customOption));
-  return menu;
+  template.push(customOption);
+  return template;
 };
 
 const handleInputKeyPress = (onChange, min, max) => event => {
@@ -188,7 +178,6 @@ const handleInputKeyPress = (onChange, min, max) => event => {
     return;
   }
 
-  // Fake an onChange event
   if (event.key === 'ArrowUp') {
     event.currentTarget.value = `${Math.min(parsedValue + multiplier, max)}`;
     onChange(event);

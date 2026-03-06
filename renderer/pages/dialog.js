@@ -2,7 +2,6 @@ import Actions from '../components/dialog/actions';
 import Icon from '../components/dialog/icon';
 import Body from '../components/dialog/body';
 import React, {useState, useEffect, useRef, useCallback} from 'react';
-import {ipcRenderer as ipc} from 'electron-better-ipc';
 
 let measureResolve;
 
@@ -15,16 +14,18 @@ const Dialog = () => {
   const performAction = useCallback(async index => {
     if (!isDisabled || data.cancelId === index) {
       setIsDisabled(true);
-      return ipc.callMain(`dialog-action-${data.id}`, index);
+      return window.kap.ipc.invoke(`dialog-action-${data.id}`, index);
     }
   }, [data, isDisabled, setIsDisabled]);
 
   useEffect(() => {
-    return ipc.answerMain('data', async newData => new Promise(resolve => {
+    const unsubscribe = window.kap.ipc.onWithReply('data', async newData => new Promise(resolve => {
       setData(newData);
       setMeasureSize(true);
       measureResolve = resolve;
     }));
+
+    return unsubscribe;
   }, []);
 
   useEffect(() => {

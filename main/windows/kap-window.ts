@@ -1,8 +1,9 @@
-import electron, {app, BrowserWindow, Menu} from 'electron';
-import {ipcMain as ipc} from 'electron-better-ipc';
+import {app, BrowserWindow, ipcMain, Menu} from 'electron';
 import pEvent from 'p-event';
+import path from 'path';
 import {customApplicationMenu, defaultApplicationMenu, MenuModifier} from '../menus/application';
 import {loadRoute} from '../utils/routes';
+import {sendToRenderer, callRenderer} from '../ipc-handlers';
 
 interface KapWindowOptions<State> extends Electron.BrowserWindowConstructorOptions {
   route: string;
@@ -12,15 +13,34 @@ interface KapWindowOptions<State> extends Electron.BrowserWindowConstructorOptio
   dock?: boolean;
 }
 
-// TODO: remove this when all windows use KapWindow
 app.on('browser-window-focus', (_, window) => {
   if (!KapWindow.fromId(window.id)) {
     Menu.setApplicationMenu(Menu.buildFromTemplate(defaultApplicationMenu()));
   }
 });
 
-// Has to be named BrowserWindow because of
-// https://github.com/electron/electron/blob/master/lib/browser/api/browser-window.ts#L82
+ipcMain.handle('kap-window-mount', event => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) {
+    return;
+  }
+
+  const kapWindow = KapWindow.fromId(win.id);
+  if (kapWindow) {
+    kapWindow.onRendererMounted();
+    return kapWindow.state;
+  }
+});
+
+ipcMain.handle('kap-window-state', event => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) {
+    return;
+  }
+
+  return KapWindow.fromId(win.id)?.state;
+});
+
 export default class KapWindow<State = any> {
   static defaultOptions: Partial<KapWindowOptions<any>> = {
     waitForMount: true,
@@ -38,6 +58,7 @@ export default class KapWindow<State = any> {
   private readonly readyPromise: Promise<void>;
   private readonly cleanupMethods: Array<() => void> = [];
   private readonly options: KapWindowOptions<State>;
+  private mountResolver?: () => void;
 
   constructor(private readonly props: KapWindowOptions<State>) {
     const {
@@ -50,9 +71,9 @@ export default class KapWindow<State = any> {
     this.browserWindow = new BrowserWindow({
       ...rest,
       webPreferences: {
-        nodeIntegration: true,
-        enableRemoteModule: true,
-        contextIsolation: false,
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: path.join(__dirname, '..', 'preload.js'),
         ...rest.webPreferences
       },
       show: false
@@ -92,12 +113,20 @@ export default class KapWindow<State = any> {
     }
   };
 
-  callRenderer = async <T, R>(channel: string, data?: T) => {
-    return ipc.callRenderer<T, R>(this.browserWindow, channel, data);
+  onRendererMounted = () => {
+    if (!this.browserWindow.isVisible()) {
+      this.browserWindow.show();
+    }
+
+    this.mountResolver?.();
   };
 
-  answerRenderer = <T, R>(channel: string, callback: (data: T, window: electron.BrowserWindow) => R) => {
-    this.cleanupMethods.push(ipc.answerRenderer(this.browserWindow, channel, callback));
+  callRenderer = async <R = void>(channel: string, data?: any): Promise<R> => {
+    return callRenderer<R>(this.browserWindow, channel, data);
+  };
+
+  sendToRenderer = (channel: string, data?: any): void => {
+    sendToRenderer(this.browserWindow, channel, data);
   };
 
   setState = (partialState: State) => {
@@ -106,7 +135,7 @@ export default class KapWindow<State = any> {
       ...partialState
     };
 
-    this.callRenderer('kap-window-state', this.state);
+    this.sendToRenderer('kap-window-state', this.state);
   };
 
   whenReady = async () => {
@@ -138,37 +167,26 @@ export default class KapWindow<State = any> {
       Menu.setApplicationMenu(this.menu);
     });
 
-    this.webContents.on('did-finish-load', async () => {
-      if (this.state) {
-        this.callRenderer('kap-window-state', this.state);
+    this.webContents.on('did-finish-load', () => {
+      if (!this.state) {
+        return;
       }
-    });
 
-    this.answerRenderer('kap-window-state', () => this.state);
+      this.sendToRenderer('kap-window-state', this.state);
+      // Send again after a short delay so the renderer (which sets up the listener in useEffect) receives it
+      setTimeout(() => this.sendToRenderer('kap-window-state', this.state), 50);
+      setTimeout(() => this.sendToRenderer('kap-window-state', this.state), 200);
+    });
 
     loadRoute(this.browserWindow, this.props.route);
 
     if (waitForMount) {
       return new Promise<void>(resolve => {
-        this.answerRenderer('kap-window-mount', () => {
-          if (!this.browserWindow.isVisible()) {
-            this.browserWindow.show();
-          }
-
-          resolve();
-        });
+        this.mountResolver = resolve;
       });
     }
 
     await pEvent(this.webContents, 'did-finish-load');
     this.browserWindow.show();
   }
-
-  // Use this around any call that causes:
-  // TypeError: Object has been destroyed
-  // private readonly executeIfNotDestroyed = (callback: () => void) => {
-  //   if (!this.browserWindow.isDestroyed()) {
-  //     callback();
-  //   }
-  // };
 }

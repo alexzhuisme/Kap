@@ -1,4 +1,3 @@
-import electron from 'electron';
 import React, {useState, useEffect} from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
@@ -97,12 +96,9 @@ const RecordButton = ({
     event.stopPropagation();
 
     if (cropperExists) {
-      const {remote} = electron;
-      const {startRecording} = remote.require('./aperture');
-
       willStartRecording();
 
-      startRecording({
+      window.kap.ipc.invoke('aperture:startRecording', {
         cropperBounds: {
           x,
           y,

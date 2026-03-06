@@ -66,11 +66,18 @@ const PlayBar = () => {
   const previewLabelTime = resizing ? currentTime : (startTime <= hoverTime && hoverTime <= endTime ? hoverTime - startTime : hoverTime);
   const previewDuration = resizing ? total : (startTime <= hoverTime && hoverTime <= endTime ? total : undefined);
 
+  const progressWidth = duration > 0 ? (total / duration) * 100 : 100;
+  const progressLeft = duration > 0 ? (startTime / duration) * 100 : 0;
+
   return (
     <div className="container" onMouseUp={seek} onMouseMove={updatePreview}>
       <div className="progress-bar-container">
+        <div className="trim-labels">
+          <span className="label">Start</span>
+          <span className="label">End</span>
+        </div>
         <div className="progress-bar">
-          <progress ref={progress} max={total} value={current}/>
+          <progress ref={progress} max={total} value={current} style={{width: `${progressWidth}%`, left: `${progressLeft}%`}}/>
           <div className="preview">
             <Preview time={previewTime} labelTime={previewLabelTime} duration={previewDuration} hidePreview={resizing}/>
           </div>
@@ -79,7 +86,7 @@ const PlayBar = () => {
             className="slider start"
             value={startTime}
             min={0}
-            max={duration}
+            max={duration || 1}
             step={0.00001}
             onChange={setStartTime}
             onMouseDown={startResizing}
@@ -89,7 +96,7 @@ const PlayBar = () => {
             className="slider end"
             value={endTime}
             min={0}
-            max={duration}
+            max={duration || 1}
             step={0.00001}
             onChange={setEndTime}
             onMouseDown={startResizing}
@@ -126,11 +133,21 @@ const PlayBar = () => {
               position: relative;
             }
 
+            .trim-labels {
+              position: absolute;
+              bottom: 100%;
+              left: 0;
+              right: 0;
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 4px;
+              font-size: 10px;
+              color: rgba(255, 255, 255, 0.7);
+            }
+
             progress {
               position: absolute;
               top: 0;
-              width: ${total * 100 / duration}%;
-              left: ${startTime * 100 / duration}%;
               -webkit-appearance: none;
               height: 4px;
               border-radius: 4px;

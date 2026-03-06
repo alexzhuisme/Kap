@@ -1,7 +1,6 @@
 import {DropdownArrowIcon, CancelIcon} from '../../../vectors';
 import classNames from 'classnames';
 import {useRef} from 'react';
-import {remote, MenuItemConstructorOptions, NativeImage} from 'electron';
 
 type Option<T> = {
   label: string;
@@ -9,9 +8,8 @@ type Option<T> = {
   subMenu?: Array<Option<T>>;
   type?: string;
   checked?: boolean;
-  click?: () => void;
   separator?: false;
-  icon?: NativeImage;
+  iconDataUrl?: string;
 };
 
 export type Separator = {
@@ -20,7 +18,7 @@ export type Separator = {
   subMenu: never;
   type: never;
   checked: never;
-  icon: never;
+  iconDataUrl: never;
   separator: true;
 };
 
@@ -41,16 +39,14 @@ const Select = <T, >(props: Props<T>) => {
   const selectedLabel = props.customLabel ?? (selectedOption?.label);
   const clearable = props.clearable && selectedOption;
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (options.length === 0) {
       return;
     }
 
     const boundingRect = select.current.getBoundingClientRect();
 
-    const {Menu} = remote;
-
-    const convertToMenuTemplate = (option: Option<T> | Separator): MenuItemConstructorOptions => {
+    const convertToMenuTemplate = (option: Option<T> | Separator): any => {
       if (option.separator) {
         return {type: 'separator'};
       }
@@ -65,21 +61,23 @@ const Select = <T, >(props: Props<T>) => {
 
       return {
         label: option.label,
-        type: option.type as any || 'checkbox',
+        type: option.type || 'checkbox',
         checked: option.checked ?? (option.value === value),
-        click: option.click ?? (() => {
-          props.onChange(option.value);
-        }),
-        icon: option.icon
+        value: option.value,
+        iconDataUrl: option.iconDataUrl
       };
     };
 
-    const menu = Menu.buildFromTemplate(options.map(opt => convertToMenuTemplate(opt)));
+    const menuTemplate = options.map(opt => convertToMenuTemplate(opt));
 
-    menu.popup({
+    const result = await window.kap.menu.popup(menuTemplate, {
       x: Math.round(boundingRect.left),
       y: Math.round(boundingRect.top)
     });
+
+    if (result !== null) {
+      props.onChange(result);
+    }
   };
 
   const handleDropdownClick = event => {

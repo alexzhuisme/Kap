@@ -1,5 +1,4 @@
 import {createContext, useContext, useState, useEffect, ReactNode} from 'react';
-import {ipcRenderer as ipc} from 'electron-better-ipc';
 
 const WindowStateContext = createContext<any>(undefined);
 
@@ -7,9 +6,9 @@ export const WindowStateProvider = (props: {children: ReactNode}) => {
   const [windowState, setWindowState] = useState();
 
   useEffect(() => {
-    ipc.callMain('kap-window-state').then(setWindowState);
+    window.kap.ipc.invoke('kap-window-state').then(setWindowState);
 
-    return ipc.answerMain('kap-window-state', (newState: any) => {
+    return window.kap.ipc.on('kap-window-state', (newState: any) => {
       setWindowState(newState);
     });
   }, []);

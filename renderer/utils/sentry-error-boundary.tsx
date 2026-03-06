@@ -1,22 +1,17 @@
 import React from 'react';
 import * as Sentry from '@sentry/browser';
-import electron from 'electron';
-import type {api as Api, is as Is} from 'electron-util';
 
 const SENTRY_PUBLIC_DSN = 'https://2dffdbd619f34418817f4db3309299ce@sentry.io/255536';
 
 class SentryErrorBoundary extends React.Component<{children: React.ReactNode}> {
-  constructor(props) {
-    super(props);
-    const {settings} = electron.remote.require('./common/settings');
-    // Done in-line because this is used in _app
-    const {is, api} = require('electron-util') as {
-      api: typeof Api;
-      is: typeof Is;
-    };
+  async componentDidMount() {
+    const isDev = await window.kap.ipc.invoke('kap:app:isDevelopment');
+    const allowAnalytics = await window.kap.ipc.invoke('settings:get', 'allowAnalytics');
 
-    if (!is.development && settings.get('allowAnalytics')) {
-      const release = `${api.app.name}@${api.app.getVersion()}`.toLowerCase();
+    if (!isDev && allowAnalytics) {
+      const name = await window.kap.app.getName();
+      const version = await window.kap.app.getVersion();
+      const release = `${name}@${version}`.toLowerCase();
       Sentry.init({dsn: SENTRY_PUBLIC_DSN, release});
     }
   }

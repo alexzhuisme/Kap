@@ -1,11 +1,28 @@
 'use strict';
 
-import {BrowserWindow, dialog} from 'electron';
+import {BrowserWindow, dialog, app} from 'electron';
 import {ShareServiceContext} from '../service-context';
 import {settings} from '../../common/settings';
 import makeDir from 'make-dir';
 import {Format} from '../../common/types';
 import path from 'path';
+
+const extensionByFormat: Record<Format, string> = {
+  [Format.gif]: 'gif',
+  [Format.webm]: 'webm',
+  [Format.apng]: 'apng',
+  [Format.mp4]: 'mp4',
+  [Format.av1]: 'mp4',
+  [Format.hevc]: 'mp4'
+};
+
+/** Default save path: Downloads folder with video title and format extension. */
+export const getDefaultSavePath = (format: Format, fileName: string): string => {
+  const dir = app.getPath('downloads');
+  const baseName = path.parse(fileName).name;
+  const ext = extensionByFormat[format] ?? 'mp4';
+  return path.join(dir, `${baseName}.${ext}`);
+};
 
 const {Notification, shell} = require('electron');
 const cpFile = require('cp-file');

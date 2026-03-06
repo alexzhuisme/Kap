@@ -1,28 +1,34 @@
-import {useState, useEffect, useMemo} from 'react';
+import {useState, useEffect} from 'react';
 import useDarkMode from '../hooks/dark-mode';
-import {remote} from 'electron';
 
 const GlobalStyles = () => {
-  const [accentColor, setAccentColor] = useState(remote.systemPreferences.getAccentColor());
+  const [accentColor, setAccentColor] = useState('007aff');
   const isDarkMode = useDarkMode();
-
-  const systemColors = useMemo(() => {
-    return systemColorNames
-      .map(name => `--system-${name}: ${remote.systemPreferences.getColor(name as any)};`)
-      .join('\n');
-  }, [isDarkMode]);
-
-  const updateAccentColor = (_, accentColor) => {
-    setAccentColor(accentColor);
-  };
+  const [systemColors, setSystemColors] = useState('');
 
   useEffect(() => {
-    remote.systemPreferences.on('accent-color-changed', updateAccentColor);
+    window.kap.system.getAccentColor().then(setAccentColor);
 
-    // Return () => {
-    //   api.systemPreferences.off('accent-color-changed', updateAccentColor);
-    // };
+    const unsubscribe = window.kap.system.onAccentColorChanged(color => {
+      setAccentColor(color);
+    });
+
+    return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    const loadSystemColors = async () => {
+      const colors = await Promise.all(
+        systemColorNames.map(async name => {
+          const color = await window.kap.system.getColor(name);
+          return `--system-${name}: ${color};`;
+        })
+      );
+      setSystemColors(colors.join('\n'));
+    };
+
+    loadSystemColors();
+  }, [isDarkMode]);
 
   return (
     <style jsx global>{`

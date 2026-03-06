@@ -3,7 +3,6 @@ import Store from 'electron-store';
 import {windowManager} from '../windows/manager';
 
 const {getWindows, activateWindow} = require('mac-windows');
-const {getAppIconListByPid} = require('node-mac-app-icon');
 
 export interface MacWindow {
   pid: number;
@@ -36,13 +35,17 @@ const isValidApp = ({ownerName}: MacWindow) => !APP_BLACKLIST.includes(ownerName
 
 const getWindowList = async () => {
   const windows = await getWindows() as MacWindow[];
-  const images = await getAppIconListByPid(windows.map(win => win.pid), {
-    size: 16,
-    failOnError: false
-  }) as Array<{
-    pid: number;
-    icon: Buffer;
-  }>;
+  let images: Array<{pid: number; icon: Buffer}> = [];
+
+  try {
+    const {getAppIconListByPid} = require('node-mac-app-icon');
+    images = await getAppIconListByPid(windows.map(win => win.pid), {
+      size: 16,
+      failOnError: false
+    }) as Array<{pid: number; icon: Buffer}>;
+  } catch {
+    // node-mac-app-icon can fail on newer Electron (e.g. nested electron-util)
+  }
 
   let maxLastUsed = 0;
 
@@ -110,3 +113,5 @@ export const activateApp = (window: MacWindow) => {
   updateAppUsageHistory(window);
   windowManager.cropper?.selectApp(window, activateWindow);
 };
+
+export {getWindowList};

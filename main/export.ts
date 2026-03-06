@@ -6,14 +6,13 @@ import {InstalledPlugin} from './plugins/plugin';
 import {ShareService} from './plugins/service';
 import {ShareServiceContext} from './plugins/service-context';
 import {prettifyFormat} from './utils/formats';
-import {ipcMain as ipc} from 'electron-better-ipc';
 import {setExportMenuItemState} from './menus/utils';
 import {Video} from './video';
 import {ConversionOptions, ExportState, ExportStatus, Format, CreateExportOptions} from './common/types';
 import {showError} from './utils/errors';
 import TypedEventEmitter from 'typed-emitter';
 import {plugins} from './plugins';
-import {askForTargetFilePath} from './plugins/built-in/save-file-plugin';
+import {getDefaultSavePath} from './plugins/built-in/save-file-plugin';
 import path from 'path';
 import {ensureDockIsShowingSync} from './utils/dock';
 import {windowManager} from './windows/manager';
@@ -251,9 +250,9 @@ export const setUpExportsListeners = () => {
     }
   });
 
-  ipc.answerRenderer('create-export', async ({
+  ipcMain.handle('create-export', async (event, {
     filePath, conversionOptions, format, plugins: pluginOptions
-  }: CreateExportOptions, window) => {
+  }: CreateExportOptions) => {
     const video = Video.fromId(filePath);
     const extras: Record<string, any> = {
       appUrl: pluginOptions.share.app?.url
@@ -264,17 +263,7 @@ export const setUpExportsListeners = () => {
     }
 
     if (pluginOptions.share.pluginName === '_saveToDisk') {
-      const targetFilePath = await askForTargetFilePath(
-        window,
-        format,
-        video.title
-      );
-
-      if (targetFilePath) {
-        extras.targetFilePath = targetFilePath;
-      } else {
-        return;
-      }
+      extras.targetFilePath = getDefaultSavePath(format, video.title);
     }
 
     const exportPlugin = plugins.sharePlugins.find(plugin => {

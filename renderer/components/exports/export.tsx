@@ -1,4 +1,3 @@
-import electron from 'electron';
 import React, {useCallback, useMemo} from 'react';
 import classNames from 'classnames';
 
@@ -8,7 +7,6 @@ import {Progress, ProgressSpinner} from './progress';
 import useConversion from '../../hooks/editor/use-conversion';
 import {ExportStatus} from '../../common/types';
 import {useShowWindow} from '../../hooks/use-show-window';
-import {MenuItemConstructorOptions} from 'electron/common';
 
 const stopPropagation = event => event.stopPropagation();
 
@@ -36,20 +34,20 @@ const Export = ({id}: {id: string}) => {
   const onDragStart = useCallback(event => {
     event.preventDefault();
     if (isActionable) {
-      electron.ipcRenderer.send('drag-export', state?.id);
+      window.kap.ipc.send('drag-export', state?.id);
     }
   }, [isActionable, state?.id]);
 
   const template = useMemo(() => {
-    const menuTemplate: MenuItemConstructorOptions[] = [{
+    const menuTemplate: any[] = [{
       label: 'Open Original',
-      click: () => openInEditor()
+      value: 'openOriginal'
     }];
 
     if (state?.canCopy) {
       menuTemplate.unshift({
         label: 'Copy',
-        click: () => copy()
+        value: 'copy'
       }, {
         type: 'separator'
       });
@@ -58,7 +56,7 @@ const Export = ({id}: {id: string}) => {
     if (canRetry) {
       menuTemplate.unshift({
         label: 'Retry',
-        click: () => retry()
+        value: 'retry'
       }, {
         type: 'separator'
       });
@@ -66,6 +64,16 @@ const Export = ({id}: {id: string}) => {
 
     return menuTemplate;
   }, [canRetry, retry, openInEditor, state?.canCopy, copy]);
+
+  const handleMenuSelect = useCallback((value: string) => {
+    if (value === 'copy') {
+      copy();
+    } else if (value === 'openOriginal') {
+      openInEditor();
+    } else if (value === 'retry') {
+      retry();
+    }
+  }, [copy, openInEditor, retry]);
 
   if (isLoading) {
     return null;
@@ -88,6 +96,7 @@ const Export = ({id}: {id: string}) => {
                 hoverFill="white"
                 activeFill="white"
                 template={template}
+                onSelect={handleMenuSelect}
               />
           }
         </div>

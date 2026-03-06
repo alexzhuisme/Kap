@@ -1,15 +1,10 @@
-import electron from 'electron';
 import {Container} from 'unstated';
-import {ipcRenderer as ipc} from 'electron-better-ipc';
-// Import {defaultInputDeviceId} from 'common/constants';
 
 const defaultInputDeviceId = 'asd';
 
 const SETTINGS_ANALYTICS_BLACKLIST = ['kapturesDir'];
 
 export default class PreferencesContainer extends Container {
-  remote = electron.remote || false;
-
   state = {
     category: 'general',
     tab: 'discover',
@@ -18,38 +13,42 @@ export default class PreferencesContainer extends Container {
 
   mount = async setOverlay => {
     this.setOverlay = setOverlay;
-    const {settings, shortcuts} = this.remote.require('./common/settings');
-    this.settings = settings;
-    this.settings.shortcuts = shortcuts;
-    this.systemPermissions = this.remote.require('./common/system-permissions');
-    this.plugins = this.remote.require('./plugins').plugins;
-    this.track = this.remote.require('./common/analytics').track;
-    this.showError = this.remote.require('./utils/errors').showError;
 
-    const pluginsInstalled = this.plugins.installedPlugins.sort((a, b) => a.prettyName.localeCompare(b.prettyName));
+    const [settingsStore, shortcuts, pluginsInstalled, loginItemSettings] = await Promise.all([
+      window.kap.ipc.invoke('settings:getAll'),
+      window.kap.ipc.invoke('settings:getShortcuts'),
+      window.kap.ipc.invoke('plugins:getInstalled'),
+      window.kap.app.getLoginItemSettings()
+    ]);
+
+    const sortedPlugins = pluginsInstalled.sort((a, b) => a.prettyName.localeCompare(b.prettyName));
 
     this.fetchFromNpm();
 
     this.setState({
       shortcuts: {},
-      ...this.settings.store,
-      openOnStartup: this.remote.app.getLoginItemSettings().openAtLogin,
-      pluginsInstalled,
+      ...settingsStore,
+      openOnStartup: loginItemSettings.openAtLogin,
+      pluginsInstalled: sortedPlugins,
       isMounted: true,
-      shortcutMap: this.settings.shortcuts
+      shortcutMap: shortcuts
     });
 
-    if (this.settings.store.recordAudio) {
+    if (settingsStore.recordAudio) {
       this.getAudioDevices();
     }
   };
 
   getAudioDevices = async () => {
-    const {getAudioDevices, getDefaultInputDevice} = this.remote.require('./utils/devices');
-    const {audioInputDeviceId} = this.settings.store;
-    const {name: currentDefaultName} = getDefaultInputDevice() || {};
+    const [audioDevices, defaultDevice, settingsStore] = await Promise.all([
+      window.kap.ipc.invoke('devices:getAudioDevices'),
+      window.kap.ipc.invoke('devices:getDefaultInputDevice'),
+      window.kap.ipc.invoke('settings:getAll')
+    ]);
 
-    const audioDevices = await getAudioDevices();
+    const {audioInputDeviceId} = settingsStore;
+    const currentDefaultName = defaultDevice?.name;
+
     const updates = {
       audioDevices: [
         {name: `System Default${currentDefaultName ? ` (${currentDefaultName})` : ''}`, id: defaultInputDeviceId},
@@ -60,7 +59,7 @@ export default class PreferencesContainer extends Container {
 
     if (!audioDevices.some(device => device.id === audioInputDeviceId)) {
       updates.audioInputDeviceId = defaultInputDeviceId;
-      this.settings.set('audioInputDeviceId', defaultInputDeviceId);
+      await window.kap.ipc.invoke('settings:set', 'audioInputDeviceId', defaultInputDeviceId);
     }
 
     this.setState(updates);
@@ -87,7 +86,7 @@ export default class PreferencesContainer extends Container {
         this.scrollIntoView('discover', target.name);
         this.setState({category: 'plugins', tab: 'discover'});
 
-        const buttonIndex = this.remote.dialog.showMessageBoxSync(this.remote.getCurrentWindow(), {
+        const buttonIndex = window.kap.dialog.showMessageBoxSync({
           type: 'question',
           buttons: [
             'Install',
@@ -95,7 +94,7 @@ export default class PreferencesContainer extends Container {
           ],
           defaultId: 0,
           cancelId: 1,
-          message: `Do you want to install the “${target.name}” plugin?`
+          message: `Do you want to install the "${target.name}" plugin?`
         });
 
         if (buttonIndex === 0) {
@@ -125,7 +124,7 @@ export default class PreferencesContainer extends Container {
 
   fetchFromNpm = async () => {
     try {
-      const plugins = await this.plugins.getFromNpm();
+      const plugins = await window.kap.ipc.invoke('plugins:getFromNpm');
       this.setState({
         npmError: false,
         pluginsFromNpm: plugins.sort((a, b) => {
@@ -158,7 +157,7 @@ export default class PreferencesContainer extends Container {
     const {pluginsInstalled, pluginsFromNpm} = this.state;
 
     this.setState({pluginBeingInstalled: name});
-    const result = await this.plugins.install(name);
+    const result = await window.kap.ipc.invoke('plugins:install', name);
 
     if (result) {
       this.setState({
@@ -177,7 +176,7 @@ export default class PreferencesContainer extends Container {
     const {pluginsInstalled, pluginsFromNpm} = this.state;
 
     const onTransitionEnd = async () => {
-      const plugin = await this.plugins.uninstall(name);
+      const plugin = await window.kap.ipc.invoke('plugins:uninstall', name);
       this.setState({
         pluginsInstalled: pluginsInstalled.filter(p => p.name !== name),
         pluginsFromNpm: [plugin, ...pluginsFromNpm].sort((a, b) => a.prettyName.localeCompare(b.prettyName)),
@@ -190,51 +189,54 @@ export default class PreferencesContainer extends Container {
   };
 
   openPluginsConfig = async name => {
-    this.track(`plugin/config/${name}`);
+    await window.kap.ipc.invoke('analytics:track', `plugin/config/${name}`);
     this.scrollIntoView('installed', name);
     this.setState({category: 'plugins'});
     this.setOverlay(true);
-    await this.plugins.openPluginConfig(name);
-    ipc.callMain('refresh-usage');
+    await window.kap.ipc.invoke('plugins:openConfig', name);
+    await window.kap.ipc.invoke('refresh-usage');
     this.setOverlay(false);
   };
 
-  openPluginsFolder = () => electron.shell.openPath(this.plugins.pluginsDir);
+  openPluginsFolder = async () => {
+    const pluginsDir = await window.kap.ipc.invoke('plugins:getPluginsDir');
+    window.kap.shell.openPath(pluginsDir);
+  };
 
   selectCategory = category => {
     this.setState({category});
   };
 
-  selectTab = tab => {
-    this.track(`preferences/tab/${tab}`);
+  selectTab = async tab => {
+    await window.kap.ipc.invoke('analytics:track', `preferences/tab/${tab}`);
     this.setState({tab});
   };
 
-  toggleSetting = (setting, value) => {
+  toggleSetting = async (setting, value) => {
     const newValue = value === undefined ? !this.state[setting] : value;
     if (!SETTINGS_ANALYTICS_BLACKLIST.includes(setting)) {
-      this.track(`preferences/setting/${setting}/${newValue}`);
+      window.kap.ipc.invoke('analytics:track', `preferences/setting/${setting}/${newValue}`);
     }
 
     this.setState({[setting]: newValue});
-    this.settings.set(setting, newValue);
+    await window.kap.ipc.invoke('settings:set', setting, newValue);
   };
 
   toggleRecordAudio = async () => {
     const newValue = !this.state.recordAudio;
-    this.track(`preferences/setting/recordAudio/${newValue}`);
+    window.kap.ipc.invoke('analytics:track', `preferences/setting/recordAudio/${newValue}`);
 
-    if (!newValue || await this.systemPermissions.ensureMicrophonePermissions()) {
+    if (!newValue || await window.kap.ipc.invoke('system:ensureMicrophonePermissions')) {
       if (newValue) {
         try {
           await this.getAudioDevices();
         } catch (error) {
-          this.showError(error);
+          await window.kap.ipc.invoke('errors:show', error.message || String(error));
         }
       }
 
       this.setState({recordAudio: newValue});
-      this.settings.set('recordAudio', newValue);
+      await window.kap.ipc.invoke('settings:set', 'recordAudio', newValue);
     }
   };
 
@@ -242,12 +244,12 @@ export default class PreferencesContainer extends Container {
     const setting = 'enableShortcuts';
     const newValue = !this.state[setting];
     this.toggleSetting(setting, newValue);
-    await ipc.callMain('toggle-shortcuts', {enabled: newValue});
+    await window.kap.ipc.invoke('toggle-shortcuts', {enabled: newValue});
   };
 
   updateShortcut = async (setting, shortcut) => {
     try {
-      await ipc.callMain('update-shortcut', {setting, shortcut});
+      await window.kap.ipc.invoke('update-shortcut', {setting, shortcut});
       this.setState({
         shortcuts: {
           ...this.state.shortcuts,
@@ -259,29 +261,27 @@ export default class PreferencesContainer extends Container {
     }
   };
 
-  setOpenOnStartup = value => {
+  setOpenOnStartup = async value => {
     const openOnStartup = typeof value === 'boolean' ? value : !this.state.openOnStartup;
     this.setState({openOnStartup});
-    this.remote.app.setLoginItemSettings({openAtLogin: openOnStartup});
+    await window.kap.app.setLoginItemSettings({openAtLogin: openOnStartup});
   };
 
-  pickKapturesDir = () => {
-    const {dialog, getCurrentWindow} = this.remote;
-
-    const directories = dialog.showOpenDialogSync(getCurrentWindow(), {
+  pickKapturesDir = async () => {
+    const result = await window.kap.dialog.showOpenDialog({
       properties: [
         'openDirectory',
         'createDirectory'
       ]
     });
 
-    if (directories) {
-      this.toggleSetting('kapturesDir', directories[0]);
+    if (!result.canceled && result.filePaths.length > 0) {
+      this.toggleSetting('kapturesDir', result.filePaths[0]);
     }
   };
 
-  setAudioInputDeviceId = id => {
+  setAudioInputDeviceId = async id => {
     this.setState({audioInputDeviceId: id});
-    this.settings.set('audioInputDeviceId', id);
+    await window.kap.ipc.invoke('settings:set', 'audioInputDeviceId', id);
   };
 }

@@ -1,12 +1,13 @@
 import {useState, useEffect} from 'react';
 
 const useDarkMode = () => {
-  const {darkMode} = require('electron-util');
-  const [isDarkMode, setIsDarkMode] = useState(darkMode.isEnabled);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
-    return darkMode.onChange(() => {
-      setIsDarkMode(darkMode.isEnabled);
+    window.kap.system.isDarkMode().then(setIsDarkMode);
+
+    return window.kap.system.onThemeChanged((isDark: boolean) => {
+      setIsDarkMode(isDark);
     });
   }, []);
 

@@ -14,6 +14,13 @@ import {windowManager} from '../windows/manager';
 
 const got = require('got');
 
+const hiddenPlugins = new Set([
+  'kap-azure', 'kap-cloudinary', 'kap-dropbox', 'kap-fanfou',
+  'kap-gfycat', 'kap-gifski', 'kap-giphy', 'kap-imgur',
+  'kap-kdrive', 'kap-nextcloud', 'kap-s3', 'kap-slate',
+  'kap-transfer', 'kap-vercel'
+]);
+
 type PackageJson = {
   dependencies: Record<string, string>;
 };
@@ -142,7 +149,8 @@ export class Plugins extends EventEmitter {
     return Promise.all(response.body.results
       .map(x => x.package)
       .filter(x => x.name.startsWith('kap-'))
-      .filter(x => !installed.includes(x.name)) // Filter out installed plugins
+      .filter(x => !hiddenPlugins.has(x.name))
+      .filter(x => !installed.includes(x.name))
       .map(async x => {
         const {kap, kapVersion} = await packageJson(x.name, {fullMetadata: true}) as any;
         return new NpmPlugin(x, {

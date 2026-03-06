@@ -1,11 +1,8 @@
-import electron from 'electron';
 import nearestNormalAspectRatio from 'nearest-normal-aspect-ratio';
 import {Container} from 'unstated';
 
 import {minHeight, minWidth, resizeTo, setScreenSize} from '../utils/inputs';
 
-// Helper function for retrieving the simplest ratio,
-// via the largest common divisor of two numbers (thanks @doot0)
 const getLargestCommonDivisor = (first, second) => {
   if (!first) {
     return 1;
@@ -37,19 +34,13 @@ export const findRatioForSize = (width, height) => {
 };
 
 export default class CropperContainer extends Container {
-  remote = electron.remote || false;
-
   constructor() {
     super();
 
-    if (!this.remote) {
+    if (typeof window === 'undefined' || !window.kap) {
       this.state = {};
       return;
     }
-
-    const {settings} = this.remote.require('./common/settings');
-    this.settings = settings;
-    this.settings.getSelectedInputDeviceId = this.remote.require('./utils/devices').getSelectedInputDeviceId;
 
     this.state = {
       isRecording: false,
@@ -64,18 +55,31 @@ export default class CropperContainer extends Container {
       isActive: false,
       isReady: false,
       ratio: [1, 1],
-      recordAudio: this.settings.get('recordAudio'),
-      audioInputDeviceId: this.settings.getSelectedInputDeviceId()
+      recordAudio: false,
+      audioInputDeviceId: null
     };
 
-    this.settings.onDidChange('recordAudio', recordAudio => {
+    this.init();
+  }
+
+  init = async () => {
+    try {
+      const [recordAudio, audioInputDeviceId] = await Promise.all([
+        window.kap.ipc.invoke('settings:get', 'recordAudio'),
+        window.kap.ipc.invoke('devices:getSelectedInputDeviceId')
+      ]);
+      this.setState({recordAudio, audioInputDeviceId});
+    } catch {}
+
+    window.kap.ipc.on('settings:changed:recordAudio', recordAudio => {
       this.setState({recordAudio});
     });
 
-    this.settings.onDidChange('audioInputDeviceId', async () => {
-      this.setState({audioInputDeviceId: this.settings.getSelectedInputDeviceId()});
+    window.kap.ipc.on('settings:changed:audioInputDeviceId', async () => {
+      const audioInputDeviceId = await window.kap.ipc.invoke('devices:getSelectedInputDeviceId');
+      this.setState({audioInputDeviceId});
     });
-  }
+  };
 
   setDisplay = display => {
     const {width: screenWidth, height: screenHeight, isActive, id, cropper = {}} = display;
@@ -121,10 +125,10 @@ export default class CropperContainer extends Container {
     this.setState(updates);
   };
 
-  updateSettings = updates => {
+  updateSettings = async updates => {
     const {x, y, width, height, ratio, displayId} = this.state;
 
-    this.settings.set('cropper', {
+    await window.kap.ipc.invoke('settings:set', 'cropper', {
       x,
       y,
       width,
@@ -136,12 +140,12 @@ export default class CropperContainer extends Container {
     this.setState(updates);
   };
 
-  setSize = ({width: defaultWidth, height: defaultHeight}) => {
+  setSize = async ({width: defaultWidth, height: defaultHeight}) => {
     let {width, height} = this.state;
     width = width || defaultWidth;
     height = height || defaultHeight;
     const updates = {width, height};
-    this.settings.set('cropper', updates);
+    await window.kap.ipc.invoke('settings:set', 'cropper', updates);
     this.setState(updates);
     this.actionBarContainer.setInputValues(updates);
   };
@@ -281,7 +285,7 @@ export default class CropperContainer extends Container {
 
   stopPicking = () => {
     if (this.state.isPicking) {
-      this.remote.getCurrentWindow().close();
+      window.kap.window.close();
     } else {
       this.cursorContainer.removeCursorObserver(this.pick);
     }
@@ -414,7 +418,6 @@ export default class CropperContainer extends Container {
         updates.currentHandle = {bottom: !bottom, top: !top, left: !left, right: !right};
       }
 
-      // Check which dimension has changed the most
       if (
         (updates.width - original.width) * ratio[1] > (updates.height - original.height) * ratio[0]
       ) {

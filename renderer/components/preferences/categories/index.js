@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {ipcRenderer as ipc} from 'electron-better-ipc';
 
 import {connect, PreferencesContainer} from '../../../containers';
 
@@ -20,8 +19,7 @@ const CATEGORIES = [
 class Categories extends React.Component {
   componentDidUpdate(previousProps) {
     if (!previousProps.isMounted && this.props.isMounted) {
-      // Wait for the transitions to end
-      setTimeout(async () => ipc.callMain('preferences-ready'), 300);
+      setTimeout(async () => window.kap.ipc.invoke('preferences-ready'), 300);
     }
   }
 

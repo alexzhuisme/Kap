@@ -1,4 +1,3 @@
-import electron from 'electron';
 import PropTypes from 'prop-types';
 import React from 'react';
 
@@ -17,40 +16,27 @@ class Select extends React.Component {
     this.select = React.createRef();
   }
 
-  state = {};
+  handleClick = async () => {
+    const {options, onSelect, selected} = this.props;
 
-  static getDerivedStateFromProps(nextProps) {
-    const {options, onSelect, selected} = nextProps;
-
-    if (!electron.remote || options.length === 0) {
-      return {};
-    }
-
-    const {Menu, MenuItem} = electron.remote;
-    const menu = new Menu();
-
-    for (const option of options) {
-      menu.append(
-        new MenuItem({
-          label: option.label,
-          type: 'radio',
-          checked: option.value === selected,
-          click: () => onSelect(option.value)
-        })
-      );
-    }
-
-    return {menu};
-  }
-
-  handleClick = () => {
-    if (this.props.options.length > 0) {
+    if (options.length > 0) {
       const boundingRect = this.select.current.getBoundingClientRect();
 
-      this.state.menu.popup({
+      const template = options.map(option => ({
+        label: option.label,
+        value: option.value,
+        type: 'radio',
+        checked: option.value === selected
+      }));
+
+      const clickedValue = await window.kap.menu.popup(template, {
         x: Math.round(boundingRect.left),
         y: Math.round(boundingRect.top)
       });
+
+      if (clickedValue !== null && clickedValue !== undefined) {
+        onSelect(clickedValue);
+      }
     }
   };
 

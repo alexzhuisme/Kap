@@ -1,9 +1,10 @@
 'use strict';
 
-import {BrowserWindow} from 'electron';
-import {ipcMain as ipc} from 'electron-better-ipc';
+import path from 'path';
+import {BrowserWindow, ipcMain} from 'electron';
 import pEvent from 'p-event';
 
+import {sendToRenderer} from '../ipc-handlers';
 import {loadRoute} from '../utils/routes';
 import {windowManager} from './manager';
 
@@ -22,16 +23,16 @@ const openConfigWindow = async (pluginName: string) => {
     parent: prefsWindow,
     modal: true,
     webPreferences: {
-      nodeIntegration: true,
-      enableRemoteModule: true,
-      contextIsolation: false
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, '..', 'preload.js')
     }
   });
 
   loadRoute(configWindow, 'config');
 
-  configWindow.webContents.on('did-finish-load', async () => {
-    await ipc.callRenderer(configWindow, 'plugin', pluginName);
+  configWindow.webContents.on('did-finish-load', () => {
+    sendToRenderer(configWindow, 'plugin', pluginName);
     configWindow.show();
   });
 
@@ -52,24 +53,27 @@ const openEditorConfigWindow = async (pluginName: string, serviceTitle: string, 
     parent: editorWindow,
     modal: true,
     webPreferences: {
-      nodeIntegration: true,
-      enableRemoteModule: true,
-      contextIsolation: false
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, '..', 'preload.js')
     }
   });
 
   loadRoute(configWindow, 'config');
 
-  configWindow.webContents.on('did-finish-load', async () => {
-    await ipc.callRenderer(configWindow, 'edit-service', {pluginName, serviceTitle});
+  configWindow.webContents.on('did-finish-load', () => {
+    sendToRenderer(configWindow, 'edit-service', {pluginName, serviceTitle});
     configWindow.show();
   });
 
   await pEvent(configWindow, 'closed');
 };
 
-ipc.answerRenderer('open-edit-config', async ({pluginName, serviceTitle}, window) => {
-  return openEditorConfigWindow(pluginName, serviceTitle, window);
+ipcMain.handle('open-edit-config', async (event, {pluginName, serviceTitle}) => {
+  const editorWindow = BrowserWindow.fromWebContents(event.sender);
+  if (editorWindow) {
+    return openEditorConfigWindow(pluginName, serviceTitle, editorWindow);
+  }
 });
 
 windowManager.setConfig({

@@ -1,20 +1,44 @@
 'use strict';
 
-import {Tray} from 'electron';
+import {Tray, Menu} from 'electron';
 import {KeyboardEvent} from 'electron/main';
 import path from 'path';
-import {getCogMenu} from './menus/cog';
+import {getCogMenuTemplate} from './menus/cog';
 import {getRecordMenu} from './menus/record';
 import {track} from './common/analytics';
 import {openFiles} from './utils/open-files';
 import {windowManager} from './windows/manager';
 import {pauseRecording, resumeRecording, stopRecording} from './aperture';
+import {MenuOptions} from './menus/utils';
 
 let tray: Tray;
 let trayAnimation: NodeJS.Timeout | undefined;
+let rendererReady = false;
 
-const openContextMenu = async () => {
-  tray.popUpContextMenu(await getCogMenu());
+export const setRendererReady = () => {
+  rendererReady = true;
+};
+
+const getTrayMenu = async () => {
+  const cogItems = await getCogMenuTemplate();
+
+  const template: MenuOptions = [
+    {
+      label: 'New Recording',
+      enabled: rendererReady,
+      click: () => {
+        windowManager.cropper?.open();
+      }
+    },
+    {type: 'separator'},
+    ...cogItems
+  ];
+
+  return Menu.buildFromTemplate(template);
+};
+
+const openTrayMenu = async () => {
+  tray.popUpContextMenu(await getTrayMenu());
 };
 
 const openRecordingContextMenu = async () => {
@@ -25,12 +49,10 @@ const openPausedContextMenu = async () => {
   tray.popUpContextMenu(await getRecordMenu(true));
 };
 
-const openCropperWindow = () => windowManager.cropper?.open();
-
 export const initializeTray = () => {
   tray = new Tray(path.join(__dirname, '..', 'static', 'menubarDefaultTemplate.png'));
-  tray.on('click', openCropperWindow);
-  tray.on('right-click', openContextMenu);
+  tray.on('click', openTrayMenu);
+  tray.on('right-click', openTrayMenu);
   tray.on('drop-files', (_, files) => {
     track('editor/opened/tray');
     openFiles(...files);
@@ -40,8 +62,8 @@ export const initializeTray = () => {
 };
 
 export const disableTray = () => {
-  tray.removeListener('click', openCropperWindow);
-  tray.removeListener('right-click', openContextMenu);
+  tray.removeListener('click', openTrayMenu);
+  tray.removeListener('right-click', openTrayMenu);
 };
 
 export const resetTray = () => {
@@ -53,8 +75,8 @@ export const resetTray = () => {
   tray.removeAllListeners('right-click');
 
   tray.setImage(path.join(__dirname, '..', 'static', 'menubarDefaultTemplate.png'));
-  tray.on('click', openCropperWindow);
-  tray.on('right-click', openContextMenu);
+  tray.on('click', openTrayMenu);
+  tray.on('right-click', openTrayMenu);
 };
 
 export const setRecordingTray = () => {

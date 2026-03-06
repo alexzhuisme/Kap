@@ -7,7 +7,7 @@ import {settings} from '../common/settings';
 import {defaultInputDeviceId} from '../common/constants';
 import {hasMicrophoneAccess} from '../common/system-permissions';
 
-const getCogMenuTemplate = async (): Promise<MenuOptions> => [
+export const getCogMenuTemplate = async (): Promise<MenuOptions> => [
   getAboutMenuItem(),
   {
     type: 'separator'

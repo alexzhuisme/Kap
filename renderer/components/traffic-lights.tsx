@@ -1,4 +1,3 @@
-import {remote} from 'electron';
 import {useState, useEffect, FunctionComponent} from 'react';
 
 interface TrafficLightsProps {
@@ -6,60 +5,63 @@ interface TrafficLightsProps {
 }
 
 const TrafficLights: FunctionComponent<TrafficLightsProps> = props => {
-  const currentWindow = remote.getCurrentWindow();
   const [tint, setTint] = useState('blue');
 
   useEffect(() => {
-    const setTintColor = () => {
-      setTint(remote.systemPreferences.getUserDefault('AppleAquaColorVariant', 'string') === '6' ? 'graphite' : 'blue');
+    let subscriptionId: number | null = null;
+    let unsubscribeIpc: (() => void) | null = null;
+
+    const updateTintColor = async () => {
+      const variant = await window.kap.system.getUserDefault('AppleAquaColorVariant', 'string');
+      setTint(variant === '6' ? 'graphite' : 'blue');
     };
 
-    const tintSubscription = remote.systemPreferences.subscribeNotification('AppleAquaColorVariantChanged', setTintColor);
-    setTintColor();
+    const init = async () => {
+      await updateTintColor();
+      subscriptionId = await window.kap.system.subscribeNotification('AppleAquaColorVariantChanged');
+      unsubscribeIpc = window.kap.ipc.on(`kap:system:notification:${subscriptionId}`, updateTintColor);
+    };
+
+    init();
 
     return () => {
-      remote.systemPreferences.unsubscribeNotification(tintSubscription);
+      unsubscribeIpc?.();
+      if (subscriptionId !== null) {
+        window.kap.system.unsubscribeNotification(subscriptionId);
+      }
     };
   }, []);
 
-  const enabled = {
-    close: currentWindow.closable,
-    minimize: currentWindow.minimizable,
-    maximize: currentWindow.maximizable
-  };
-
-  const getClassName = (name: string) => `traffic-light ${name}${enabled[name] ? '' : ' disabled'}`;
-
   const close = async () => {
     if (!props.shouldClose || await props.shouldClose()) {
-      currentWindow.close();
+      window.kap.window.close();
     }
   };
 
   const minimize = () => {
-    currentWindow.minimize();
+    window.kap.window.minimize();
   };
 
   const maximize = () => {
-    currentWindow.setFullScreen(!currentWindow.isFullScreen());
+    window.kap.window.maximize();
   };
 
   return (
     <div className={`traffic-lights ${tint}`}>
-      <div className={getClassName('close')} onClick={close}>
+      <div className="traffic-light close" onClick={close}>
         <svg width="12" height="12">
           <circle cx="6" cy="6" r="5.75" strokeWidth="0.5"/>
           <line x1="3.17" y1="3.17" x2="8.83" y2="8.83" stroke="black"/>
           <line x1="3.17" y1="8.83" x2="8.83" y2="3.17" stroke="#760e0e"/>
         </svg>
       </div>
-      <div className={getClassName('minimize')} onClick={minimize}>
+      <div className="traffic-light minimize" onClick={minimize}>
         <svg width="12" height="12">
           <circle cx="6" cy="6" r="5.75" strokeWidth="0.5"/>
           <line x1="2" y1="6" x2="10" y2="6"/>
         </svg>
       </div>
-      <div className={getClassName('maximize')} onClick={maximize}>
+      <div className="traffic-light maximize" onClick={maximize}>
         <svg width="12" height="12">
           <circle cx="6" cy="6" r="5.75" strokeWidth="0.5"/>
           <rect x="3.5" y="3.5" width="5" height="5" rx="1" ry="1"/>

@@ -1,8 +1,8 @@
-import {BrowserWindow} from 'electron';
-import {promisify} from 'util';
+import path from 'path';
+import {BrowserWindow, ipcMain} from 'electron';
 import pEvent from 'p-event';
 
-import {ipcMain as ipc} from 'electron-better-ipc';
+import {sendToRenderer} from '../ipc-handlers';
 import {loadRoute} from '../utils/routes';
 import {track} from '../common/analytics';
 import {windowManager} from './manager';
@@ -17,7 +17,7 @@ const openPrefsWindow = async (options?: PreferencesWindowOptions) => {
 
   if (prefsWindow) {
     if (options) {
-      ipc.callRenderer(prefsWindow, 'options', options);
+      sendToRenderer(prefsWindow, 'options', options);
     }
 
     prefsWindow.show();
@@ -38,9 +38,9 @@ const openPrefsWindow = async (options?: PreferencesWindowOptions) => {
     transparent: true,
     vibrancy: 'window',
     webPreferences: {
-      nodeIntegration: true,
-      enableRemoteModule: true,
-      contextIsolation: false
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, '..', 'preload.js')
     }
   });
 
@@ -56,13 +56,16 @@ const openPrefsWindow = async (options?: PreferencesWindowOptions) => {
   await pEvent(prefsWindow.webContents, 'did-finish-load');
 
   if (options) {
-    ipc.callRenderer(prefsWindow, 'options', options);
+    sendToRenderer(prefsWindow, 'options', options);
   }
 
-  ipc.callRenderer(prefsWindow, 'mount');
+  sendToRenderer(prefsWindow, 'mount');
 
-  // @ts-expect-error
-  await promisify(ipc.answerRenderer)('preferences-ready');
+  await new Promise<void>(resolve => {
+    ipcMain.handleOnce('preferences-ready', () => {
+      resolve();
+    });
+  });
 
   prefsWindow.show();
   return prefsWindow;
@@ -74,7 +77,7 @@ const closePrefsWindow = () => {
   }
 };
 
-ipc.answerRenderer('open-preferences', openPrefsWindow);
+ipcMain.handle('open-preferences', (_, options) => openPrefsWindow(options));
 
 windowManager.setPreferences({
   open: openPrefsWindow,
