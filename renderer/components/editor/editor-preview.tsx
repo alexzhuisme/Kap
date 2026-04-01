@@ -43,13 +43,16 @@ const EditorPreview = () => {
           height: 36px;
           background: rgba(0, 0, 0, 0.2);
           backdrop-filter: blur(20px);
-          transition: top 0.12s ease-in-out;
           display: flex;
           z-index: 10;
+          transition: top 0.12s ease-in-out;
+          pointer-events: none;
+          -webkit-app-region: drag;
         }
 
         .preview-hover-container:hover .title-bar {
           top: 0;
+          pointer-events: auto;
         }
 
         .title-bar-container {

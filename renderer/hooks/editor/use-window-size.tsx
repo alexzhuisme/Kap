@@ -8,6 +8,11 @@ const DEFAULT_EDITOR_HEIGHT = 480;
 
 export const useEditorWindowSizeEffect = (isConversionWindowState: boolean) => {
   const previousWindowSizeRef = useRef<{width: number; height: number} | undefined>(undefined);
+  const isConversionRef = useRef(isConversionWindowState);
+
+  useEffect(() => {
+    isConversionRef.current = isConversionWindowState;
+  }, [isConversionWindowState]);
 
   useEffect(() => {
     const update = async () => {
@@ -32,4 +37,20 @@ export const useEditorWindowSizeEffect = (isConversionWindowState: boolean) => {
 
     update();
   }, [isConversionWindowState]);
+
+  useEffect(() => {
+    const syncBounds = async () => {
+      if (isConversionRef.current) {
+        return;
+      }
+
+      const bounds = await window.kap.window.getBounds();
+      previousWindowSizeRef.current = {width: bounds.width, height: bounds.height};
+    };
+
+    window.addEventListener('resize', syncBounds);
+    return () => {
+      window.removeEventListener('resize', syncBounds);
+    };
+  }, []);
 };

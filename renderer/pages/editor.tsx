@@ -55,12 +55,16 @@ const EditorPage = () => {
         #__next {
           display: flex;
           flex-direction: column;
+          min-width: 0;
+          min-height: 0;
         }
 
         .cover-window {
           display: flex;
           flex-direction: column;
           flex: 1;
+          min-width: 0;
+          min-height: 0;
           -webkit-app-region: drag;
           user-select: none;
           background-color: #222222;
@@ -77,14 +81,6 @@ const EditorPage = () => {
           --slider-popup-background: #222222;
           --slider-background-color: var(--input-background-color);
           --slider-thumb-color: var(--storm);
-        }
-
-        .preview-hover-container .video-controls {
-          bottom: 0;
-        }
-
-        .progress-bar-container {
-          width: 100%;
         }
 
         .tooltip {

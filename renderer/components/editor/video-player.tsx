@@ -25,29 +25,32 @@ const VideoPlayer = () => {
           position: absolute;
           width: 100%;
           height: 64px;
-          bottom: -64px;
+          bottom: 0;
           left: 0;
+          box-sizing: border-box;
           background-image: linear-gradient(-180deg,transparent,rgba(0, 0, 0, 0.4));
           padding: 16px 0;
           display: flex;
           align-items: center;
-          transition: bottom 0.12s ease-in-out;
           -webkit-app-region: no-drag;
         }
 
         .left,
         .right {
           width: 20%;
+          min-width: 0;
         }
 
         .center {
-          width: 60%;
+          flex: 1;
+          min-width: 0;
           align-items: center;
         }
 
         .controls {
           height: 100%;
           display: flex;
+          min-width: 0;
         }
       `}</style>
     </div>

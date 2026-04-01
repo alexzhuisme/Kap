@@ -106,22 +106,26 @@ const PlayBar = () => {
       <style jsx>{`
             .container {
               flex: 1;
+              min-width: 0;
+              min-height: 0;
               display: flex;
               align-items: center;
+              position: relative;
               z-index: 25;
               overflow: visible;
-              height: 50%;
             }
 
             .progress-bar-container {
               position: absolute;
-              width: 100%;
+              left: 0;
+              right: 0;
+              bottom: 8px;
+              width: auto;
+              max-width: 100%;
               display: flex;
-              bottom: 30px;
-              left: 50%;
-              transform: translateX(-50%);
-              width: 60%;
-              transition: all 0.12s ease-in-out;
+              flex-direction: column;
+              box-sizing: border-box;
+              padding: 0 4px;
             }
 
             .progress-bar {
