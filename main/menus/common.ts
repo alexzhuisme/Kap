@@ -1,10 +1,7 @@
-import delay from 'delay';
-import {app, dialog} from 'electron';
+import {app} from 'electron';
 import {openNewGitHubIssue} from 'electron-util';
 import macosRelease from '../utils/macos-release';
-import {supportedVideoExtensions} from '../common/constants';
-import {getCurrentMenuItem, MenuItemId} from './utils';
-import {openFiles} from '../utils/open-files';
+import {MenuItemId} from './utils';
 import {windowManager} from '../windows/manager';
 
 export const getPreferencesMenuItem = () => ({
@@ -22,34 +19,6 @@ export const getAboutMenuItem = () => ({
     app.focus();
     app.showAboutPanel();
   }
-});
-
-export const getOpenFileMenuItem = () => ({
-  id: MenuItemId.openVideo,
-  label: 'Open Video…',
-  accelerator: 'Command+O',
-  click: async () => {
-    windowManager.cropper?.close();
-
-    await delay(200);
-
-    app.focus();
-    const {canceled, filePaths} = await dialog.showOpenDialog({
-      filters: [{name: 'Videos', extensions: supportedVideoExtensions}],
-      properties: ['openFile', 'multiSelections']
-    });
-
-    if (!canceled && filePaths) {
-      openFiles(...filePaths);
-    }
-  }
-});
-
-export const getExportHistoryMenuItem = () => ({
-  label: 'Export History',
-  click: () => windowManager.exports?.open(),
-  enabled: getCurrentMenuItem(MenuItemId.exportHistory)?.enabled ?? false,
-  id: MenuItemId.exportHistory
 });
 
 export const getSendFeedbackMenuItem = () => ({

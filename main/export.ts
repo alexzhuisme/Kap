@@ -6,7 +6,6 @@ import {ShareService} from './plugins/service';
 import {ShareServiceContext, type PluginContextRef} from './plugins/service-context';
 import {builtinSavePlugin} from './export/builtin-save-plugin';
 import {prettifyFormat} from './utils/formats';
-import {setExportMenuItemState} from './menus/utils';
 import {Video} from './video';
 import {ConversionOptions, ExportState, ExportStatus, Format, CreateExportOptions} from './common/types';
 import {showError} from './utils/errors';
@@ -94,8 +93,6 @@ export default class Export extends (EventEmitter as new () => TypedEventEmitter
     for (const [key, value] of Object.entries(options.extras)) {
       (this.context as any)[key] = value;
     }
-
-    setExportMenuItemState(true);
   }
 
   static addExport = (newExport: Export) => {

@@ -1,5 +1,5 @@
 import {appMenu} from 'electron-util';
-import {getAboutMenuItem, getExportHistoryMenuItem, getOpenFileMenuItem, getPreferencesMenuItem, getSendFeedbackMenuItem} from './common';
+import {getAboutMenuItem, getPreferencesMenuItem, getSendFeedbackMenuItem} from './common';
 import {MenuItemId, MenuOptions} from './utils';
 
 const getAppMenuItem = () => {
@@ -17,10 +17,6 @@ export const defaultApplicationMenu = (): MenuOptions => [
     role: 'fileMenu',
     id: MenuItemId.file,
     submenu: [
-      getOpenFileMenuItem(),
-      {
-        type: 'separator'
-      },
       {
         role: 'close'
       }
@@ -40,10 +36,6 @@ export const defaultApplicationMenu = (): MenuOptions => [
       {
         role: 'zoom'
       },
-      {
-        type: 'separator'
-      },
-      getExportHistoryMenuItem(),
       {
         type: 'separator'
       },

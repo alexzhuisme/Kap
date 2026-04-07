@@ -61,18 +61,14 @@ const open = async (video: Video) => {
       if (fileMenu) {
         const submenu = fileMenu.submenu as Electron.MenuItemConstructorOptions[];
 
-        const index = submenu.findIndex(item => item.id === MenuItemId.openVideo);
-
-        if (index > -1) {
-          submenu.splice(index + 1, 0, {
-            type: 'separator'
-          }, {
-            label: 'Save Original…',
-            id: MenuItemId.saveOriginal,
-            accelerator: 'Command+S',
-            click: async () => saveOriginal(video)
-          });
-        }
+        submenu.splice(0, 0, {
+          label: 'Save Original…',
+          id: MenuItemId.saveOriginal,
+          accelerator: 'Command+S',
+          click: async () => saveOriginal(video)
+        }, {
+          type: 'separator'
+        });
       }
     }
   });

@@ -1,6 +1,6 @@
 import {Menu} from 'electron';
 import {MenuItemId, MenuOptions} from './utils';
-import {getAboutMenuItem, getExportHistoryMenuItem, getOpenFileMenuItem, getPreferencesMenuItem, getSendFeedbackMenuItem} from './common';
+import {getAboutMenuItem, getPreferencesMenuItem, getSendFeedbackMenuItem} from './common';
 import {getAudioDevices, getDefaultInputDevice} from '../utils/devices';
 import {settings} from '../common/settings';
 import {defaultInputDeviceId} from '../common/constants';
@@ -16,11 +16,6 @@ export const getCogMenuTemplate = async (): Promise<MenuOptions> => [
     type: 'separator'
   },
   await getMicrophoneItem(),
-  {
-    type: 'separator'
-  },
-  getOpenFileMenuItem(),
-  getExportHistoryMenuItem(),
   {
     type: 'separator'
   },

@@ -1,5 +1,3 @@
-import {windowManager} from '../windows/manager';
-
 const pluginPromises = new Map<string, (path: string) => void>();
 
 const handlePluginsDeepLink = (path: string) => {
