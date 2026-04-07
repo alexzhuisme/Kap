@@ -88,10 +88,16 @@ const openCropper = (display: Display, activeDisplayId?: number) => {
 const openCropperWindow = async () => {
   closeAllCroppers();
   if (windowManager.editor?.areAnyBlocking()) {
+    await dialog.showMessageBox({
+      type: 'info',
+      message: 'Finish saving your video first',
+      detail: 'An editor window is waiting for you to save or discard changes. Complete that before starting a new recording.',
+      buttons: ['OK']
+    });
     return;
   }
 
-  if (!ensureScreenCapturePermissions()) {
+  if (!(await ensureScreenCapturePermissions())) {
     return;
   }
 

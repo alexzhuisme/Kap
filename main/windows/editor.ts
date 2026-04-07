@@ -83,25 +83,36 @@ const open = async (video: Video) => {
 
   if (video.isNewRecording) {
     editorWindow.setDocumentEdited(true);
-    editorWindow.on('close', (event: any) => {
-      editorsWithNotSavedDialogs.set(video.filePath, true);
-      const buttonIndex = dialog.showMessageBoxSync(editorWindow, {
-        type: 'question',
-        buttons: [
-          'Discard',
-          'Cancel'
-        ],
-        defaultId: 0,
-        cancelId: 1,
-        message: 'Are you sure that you want to discard this recording?',
-        detail: 'You will no longer be able to edit and export the original recording.'
-      });
-
-      if (buttonIndex === 1) {
-        event.preventDefault();
+    let allowCloseWithoutConfirm = false;
+    editorWindow.on('close', (event: Electron.Event) => {
+      if (allowCloseWithoutConfirm) {
+        return;
       }
 
-      editorsWithNotSavedDialogs.delete(video.filePath);
+      event.preventDefault();
+      editorsWithNotSavedDialogs.set(video.filePath, true);
+
+      void dialog
+        .showMessageBox(editorWindow, {
+          type: 'question',
+          buttons: [
+            'Discard',
+            'Cancel'
+          ],
+          defaultId: 0,
+          cancelId: 1,
+          message: 'Are you sure that you want to discard this recording?',
+          detail: 'You will no longer be able to edit and export the original recording.'
+        })
+        .then(({response}) => {
+          if (response === 0) {
+            allowCloseWithoutConfirm = true;
+            editorWindow.close();
+          }
+        })
+        .finally(() => {
+          editorsWithNotSavedDialogs.delete(video.filePath);
+        });
     });
   }
 

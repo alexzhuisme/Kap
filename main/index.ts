@@ -119,7 +119,7 @@ const checkForUpdates = () => {
   } else if (
     !(await hasActiveRecording()) &&
     !app.getLoginItemSettings().wasOpenedAtLogin &&
-    ensureScreenCapturePermissions() &&
+    (await ensureScreenCapturePermissions()) &&
     (!settings.get('recordAudio') || hasMicrophoneAccess())
   ) {
     windowManager.cropper?.open();

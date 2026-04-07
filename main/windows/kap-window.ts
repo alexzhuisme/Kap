@@ -159,7 +159,9 @@ export default class KapWindow<State = any> {
       }
     });
 
-    this.browserWindow.on('close', this.cleanup);
+    // Only clean up on `closed`. If we also hook `close`, we run cleanup before
+    // listeners can call `event.preventDefault()` (e.g. editor discard dialog),
+    // which orphans the window in KapWindow.windows while it stays open.
     this.browserWindow.on('closed', this.cleanup);
 
     this.browserWindow.on('focus', () => {

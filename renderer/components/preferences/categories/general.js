@@ -112,7 +112,7 @@ class General extends React.Component {
           <Switch tabIndex={tabIndex} checked={enableShortcuts} onClick={toggleShortcuts}/>
         </Item>
         {
-          enableShortcuts && Object.entries(shortcutMap).map(([key, title]) => (
+          enableShortcuts && Object.entries(shortcutMap ?? {}).map(([key, title]) => (
             <Item key={key} subtitle={title}>
               <ShortcutInput
                 shortcut={shortcuts[key]}

@@ -1,7 +1,15 @@
 const path = require('path');
 
+// Static export is loaded via file:// in the packaged app. Absolute paths like
+// /_next/static/... resolve to the filesystem root and scripts never load, so
+// the cropper (and other windows) appear blank in production. Relative paths
+// fix loading when ELECTRON_STATIC_EXPORT is set during `yarn build-renderer`.
+const assetPrefix =
+  process.env.ELECTRON_STATIC_EXPORT === '1' ? './' : '';
+
 module.exports = (nextConfig) => {
   return Object.assign({}, nextConfig, {
+    assetPrefix,
     webpack(config, options) {
       config.module.rules.push({
         test: /\.+(js|jsx|mjs|ts|tsx)$/,

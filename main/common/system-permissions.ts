@@ -1,5 +1,5 @@
 import {systemPreferences, shell, dialog, app} from 'electron';
-const {hasScreenCapturePermission, hasPromptedForPermission} = require('mac-screen-capture-permissions');
+const {hasScreenCapturePermission} = require('mac-screen-capture-permissions');
 const {ensureDockIsShowing} = require('../utils/dock');
 
 let isDialogShowing = false;
@@ -72,16 +72,15 @@ const screenCaptureFallback = promptSystemPreferences({
   systemPreferencesPath: 'Privacy_ScreenCapture'
 });
 
-export const ensureScreenCapturePermissions = (fallback = screenCaptureFallback) => {
-  const hadAsked = hasPromptedForPermission();
-
-  const hasAccess = hasScreenCapturePermission();
-
-  if (hasAccess) {
+export const ensureScreenCapturePermissions = async (fallback = screenCaptureFallback): Promise<boolean> => {
+  if (hasScreenCapturePermission()) {
     return true;
   }
 
-  fallback({hasAsked: !hadAsked});
+  // Always show our dialog when access is missing. The previous `hasAsked: !hadAsked` logic
+  // skipped the dialog whenever the system had not yet prompted (`hadAsked` false), so
+  // "New Recording" appeared to do nothing on first run or after a clean install.
+  await fallback({hasAsked: false});
   return false;
 };
 

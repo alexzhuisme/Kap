@@ -8,7 +8,9 @@ export default class PreferencesContainer extends Container {
   state = {
     category: 'general',
     tab: 'discover',
-    isMounted: false
+    isMounted: false,
+    shortcutMap: {},
+    shortcuts: {}
   };
 
   mount = async setOverlay => {
