@@ -18,12 +18,8 @@ export const addPluginPromise = (plugin: string, resolveFunction: (path: string)
   pluginPromises.set(plugin, resolveFunction);
 };
 
-const triggerPluginAction = (action: string) => (name: string) => windowManager.preferences?.open({target: {name, action}});
-
 const routes = new Map([
-  ['plugins', handlePluginsDeepLink],
-  ['install-plugin', triggerPluginAction('install')],
-  ['configure-plugin', triggerPluginAction('configure')]
+  ['plugins', handlePluginsDeepLink]
 ]);
 
 export const handleDeepLink = (url: string) => {

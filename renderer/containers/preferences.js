@@ -1,7 +1,5 @@
 import {Container} from 'unstated';
 
-import {comparePluginsByPrettyName, comparePluginsForDiscover} from '../utils/compare-plugins';
-
 const defaultInputDeviceId = 'asd';
 
 const SETTINGS_ANALYTICS_BLACKLIST = ['kapturesDir'];
@@ -9,7 +7,6 @@ const SETTINGS_ANALYTICS_BLACKLIST = ['kapturesDir'];
 export default class PreferencesContainer extends Container {
   state = {
     category: 'general',
-    tab: 'discover',
     isMounted: false,
     shortcutMap: {},
     shortcuts: {},
@@ -19,23 +16,17 @@ export default class PreferencesContainer extends Container {
   mount = async setOverlay => {
     this.setOverlay = setOverlay;
 
-    const [settingsStore, shortcuts, pluginsInstalled, loginItemSettings, homePath] = await Promise.all([
+    const [settingsStore, shortcuts, loginItemSettings, homePath] = await Promise.all([
       window.kap.ipc.invoke('settings:getAll'),
       window.kap.ipc.invoke('settings:getShortcuts'),
-      window.kap.ipc.invoke('plugins:getInstalled'),
       window.kap.app.getLoginItemSettings(),
       window.kap.app.getPath('home')
     ]);
-
-    const sortedPlugins = pluginsInstalled.sort(comparePluginsByPrettyName);
-
-    this.fetchFromNpm();
 
     this.setState({
       shortcuts: {},
       ...settingsStore,
       openOnStartup: loginItemSettings.openAtLogin,
-      pluginsInstalled: sortedPlugins,
       isMounted: true,
       shortcutMap: shortcuts,
       homePath
@@ -72,145 +63,14 @@ export default class PreferencesContainer extends Container {
     this.setState(updates);
   };
 
-  scrollIntoView = (tabId, pluginId) => {
-    const plugin = document.querySelector(`#${tabId} #${pluginId}`).parentElement;
-    plugin.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-      inline: 'nearest'
-    });
-  };
-
-  openTarget = target => {
-    const isInstalled = this.state.pluginsInstalled.some(plugin => plugin.name === target.name);
-    const isFromNpm = this.state.pluginsFromNpm && this.state.pluginsFromNpm.some(plugin => plugin.name === target.name);
-
-    if (target.action === 'install') {
-      if (isInstalled) {
-        this.scrollIntoView(this.state.tab, target.name);
-        this.setState({category: 'plugins'});
-      } else if (isFromNpm) {
-        this.scrollIntoView('discover', target.name);
-        this.setState({category: 'plugins', tab: 'discover'});
-
-        const buttonIndex = window.kap.dialog.showMessageBoxSync({
-          type: 'question',
-          buttons: [
-            'Install',
-            'Cancel'
-          ],
-          defaultId: 0,
-          cancelId: 1,
-          message: `Do you want to install the "${target.name}" plugin?`
-        });
-
-        if (buttonIndex === 0) {
-          this.install(target.name);
-        }
-      } else {
-        this.setState({category: 'plugins'});
-      }
-    } else if (target.action === 'configure' && isInstalled) {
-      this.openPluginsConfig(target.name);
-    } else {
-      this.setState({category: 'plugins'});
+  setNavigation = ({category}) => {
+    if (category) {
+      this.setState({category});
     }
-  };
-
-  setNavigation = ({category, tab, target}) => {
-    if (target) {
-      if (this.state.isMounted) {
-        this.openTarget(target);
-      } else {
-        this.setState({target});
-      }
-    } else {
-      this.setState({category, tab});
-    }
-  };
-
-  fetchFromNpm = async () => {
-    try {
-      const plugins = await window.kap.ipc.invoke('plugins:getFromNpm');
-      this.setState({
-        npmError: false,
-        pluginsFromNpm: plugins.sort(comparePluginsForDiscover)
-      });
-
-      if (this.state.target) {
-        this.openTarget(this.state.target);
-        this.setState({target: undefined});
-      }
-    } catch {
-      this.setState({npmError: true});
-    }
-  };
-
-  togglePlugin = plugin => {
-    if (plugin.isInstalled) {
-      this.uninstall(plugin.name);
-    } else {
-      this.install(plugin.name);
-    }
-  };
-
-  install = async name => {
-    const {pluginsInstalled, pluginsFromNpm} = this.state;
-
-    this.setState({pluginBeingInstalled: name});
-    const result = await window.kap.ipc.invoke('plugins:install', name);
-
-    if (result) {
-      this.setState({
-        pluginBeingInstalled: undefined,
-        pluginsFromNpm: pluginsFromNpm.filter(p => p.name !== name),
-        pluginsInstalled: [result, ...pluginsInstalled].sort(comparePluginsByPrettyName)
-      });
-    } else {
-      this.setState({
-        pluginBeingInstalled: undefined
-      });
-    }
-  };
-
-  uninstall = async name => {
-    const {pluginsInstalled, pluginsFromNpm} = this.state;
-
-    const onTransitionEnd = async () => {
-      const plugin = await window.kap.ipc.invoke('plugins:uninstall', name);
-      this.setState({
-        pluginsInstalled: pluginsInstalled.filter(p => p.name !== name),
-        pluginsFromNpm: [plugin, ...pluginsFromNpm].sort(comparePluginsByPrettyName),
-        pluginBeingUninstalled: null,
-        onTransitionEnd: null
-      });
-    };
-
-    this.setState({pluginBeingUninstalled: name, onTransitionEnd});
-  };
-
-  openPluginsConfig = async name => {
-    await window.kap.ipc.invoke('analytics:track', `plugin/config/${name}`);
-    this.scrollIntoView('installed', name);
-    this.setState({category: 'plugins'});
-    this.setOverlay(true);
-    await window.kap.ipc.invoke('plugins:openConfig', name);
-    await window.kap.ipc.invoke('refresh-usage');
-    this.setOverlay(false);
-  };
-
-  openPluginsFolder = async () => {
-    const pluginsDir = await window.kap.ipc.invoke('plugins:getPluginsDir');
-    window.kap.shell.openPath(pluginsDir);
   };
 
   selectCategory = category => {
     this.setState({category});
-  };
-
-  selectTab = async tab => {
-    await window.kap.ipc.invoke('analytics:track', `preferences/tab/${tab}`);
-    this.setState({tab});
   };
 
   toggleSetting = async (setting, value) => {

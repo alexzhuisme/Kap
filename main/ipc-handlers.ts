@@ -1,6 +1,5 @@
 import {ipcMain, BrowserWindow, systemPreferences, dialog, shell, Menu, nativeImage, nativeTheme, app, MenuItemConstructorOptions} from 'electron';
 import {settings} from './common/settings';
-import {plugins} from './plugins';
 import {track} from './common/analytics';
 import {showError} from './utils/errors';
 import {getAudioDevices, getDefaultInputDevice, getSelectedInputDeviceId} from './utils/devices';
@@ -246,91 +245,6 @@ export const registerIpcHandlers = () => {
   ipcMain.handle('devices:getDefaultInputDevice', async () => getDefaultInputDevice());
   ipcMain.handle('devices:getSelectedInputDeviceId', async () => getSelectedInputDeviceId());
 
-  // --- Plugins ---
-  ipcMain.handle('plugins:getFromNpm', async () => {
-    const npmPlugins = await plugins.getFromNpm();
-    return npmPlugins.map(p => p.json);
-  });
-
-  ipcMain.handle('plugins:install', async (_, name) => {
-    const result = await plugins.install(name);
-    if (result) {
-      return {
-        name: result.name,
-        prettyName: result.prettyName,
-        version: result.version,
-        description: result.description,
-        isValid: result.isValid,
-        hasConfig: result.hasConfig,
-        isCompatible: result.isCompatible,
-        isInstalled: true
-      };
-    }
-
-    return null;
-  });
-
-  ipcMain.handle('plugins:uninstall', async (_, name) => {
-    const result = await plugins.uninstall(name);
-    return result?.json;
-  });
-
-  ipcMain.handle('plugins:getInstalled', () =>
-    plugins.installedPlugins.map(p => ({
-      name: p.name,
-      prettyName: p.prettyName,
-      version: p.version,
-      description: p.description,
-      isValid: p.isValid,
-      hasConfig: p.hasConfig,
-      isCompatible: p.isCompatible,
-      link: p.link,
-      isInstalled: true,
-      isSymlink: (p as any).isSymlink
-    })));
-
-  ipcMain.handle('plugins:openConfig', async (_, name) => plugins.openPluginConfig(name));
-
-  ipcMain.handle('plugins:getConfig', (_, name) => {
-    const plugin = plugins.installedPlugins.find(p => p.name === name);
-    return plugin ? {
-      store: plugin.config.store,
-      validators: plugin.config.validators
-    } : null;
-  });
-
-  ipcMain.handle('plugins:setConfig', (_, name, key, value) => {
-    const plugin = plugins.installedPlugins.find(p => p.name === name);
-    if (plugin) {
-      if (value === undefined) {
-        plugin.config.delete(key);
-      } else {
-        plugin.config.set(key, value);
-      }
-
-      return {store: plugin.config.store, validators: plugin.config.validators};
-    }
-
-    return null;
-  });
-
-  ipcMain.handle('plugins:openInEditor', (_, name) => {
-    const plugin = plugins.installedPlugins.find(p => p.name === name);
-    plugin?.openConfigInEditor();
-  });
-
-  ipcMain.handle('plugins:viewOnGithub', (_, name) => {
-    const plugin = plugins.installedPlugins.find(p => p.name === name);
-    plugin?.viewOnGithub();
-  });
-
-  ipcMain.handle('plugins:openConfigInEditor', (_, name) => {
-    const plugin = plugins.installedPlugins.find(p => p.name === name);
-    plugin?.openConfigInEditor();
-  });
-
-  ipcMain.handle('plugins:getPluginsDir', () => plugins.pluginsDir);
-
   // --- System Permissions ---
   ipcMain.handle('system:ensureMicrophonePermissions', async () => {
     const {ensureMicrophonePermissions} = require('./common/system-permissions');
@@ -339,12 +253,12 @@ export const registerIpcHandlers = () => {
 
   // --- Save directory ---
   ipcMain.handle('save:getDir', () => {
-    const {getSaveDir} = require('./plugins/built-in/save-file-plugin');
+    const {getSaveDir} = require('./export/save-to-disk');
     return getSaveDir();
   });
 
   ipcMain.handle('save:chooseDir', async event => {
-    const {getSaveDir, setSaveDir} = require('./plugins/built-in/save-file-plugin');
+    const {getSaveDir, setSaveDir} = require('./export/save-to-disk');
     const win = getWindowFromEvent(event);
     const result = await dialog.showOpenDialog(win!, {
       defaultPath: getSaveDir(),

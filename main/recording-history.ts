@@ -9,7 +9,6 @@ import tempy from 'tempy';
 import {SetOptional} from 'type-fest';
 
 import {windowManager} from './windows/manager';
-import {plugins} from './plugins';
 import {generateTimestampedName} from './utils/timestamped-name';
 import {Video} from './video';
 import {ApertureOptions} from './common/types';
@@ -128,19 +127,8 @@ export const cleanPastRecordings = () => {
   recordingHistory.set('recordings', []);
 };
 
-export const cleanUpRecordingPlugins = (usedPlugins: ActiveRecording['plugins']) => {
-  const recordingPlugins = plugins.recordingPlugins;
-
-  for (const pluginName of Object.keys(usedPlugins)) {
-    const plugin = recordingPlugins.find(p => p.name === pluginName);
-    for (const [serviceTitle, persistedState] of Object.entries(usedPlugins[pluginName])) {
-      const service = plugin?.recordServices.find(s => s.title === serviceTitle);
-
-      if (service?.cleanUp) {
-        service.cleanUp(persistedState);
-      }
-    }
-  }
+export const cleanUpRecordingPlugins = (_usedPlugins: ActiveRecording['plugins']) => {
+  /* Recording-time plugins removed; kept for API compatibility with persisted history shape. */
 };
 
 export const handleIncompleteRecording = async (recording: ActiveRecording) => {

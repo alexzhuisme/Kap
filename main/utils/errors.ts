@@ -10,7 +10,6 @@ import macosRelease from './macos-release';
 
 import {windowManager} from '../windows/manager';
 import Sentry, {isSentryEnabled} from './sentry';
-import {InstalledPlugin} from '../plugins/plugin';
 
 const MAX_RETRIES = 10;
 
@@ -91,7 +90,7 @@ export const showError = async (
     plugin
   }: {
     title?: string;
-    plugin?: InstalledPlugin;
+    plugin?: {prettyName?: string; name?: string; repoUrl?: string};
   } = {}
 ) => {
   await app.whenReady();
@@ -116,11 +115,12 @@ export const showError = async (
 
   // If it's a plugin error, offer to open an issue on the plugin repo (if known)
   if (plugin) {
-    const openIssueButton = plugin.repoUrl && {
+    const repoUrl = plugin.repoUrl;
+    const openIssueButton = repoUrl && {
       label: 'Open Issue',
       action: () => {
         openNewGitHubIssue({
-          repoUrl: plugin.repoUrl,
+          repoUrl,
           title,
           body: getIssueBody(title, detail)
         });

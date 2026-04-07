@@ -2,23 +2,22 @@ import {ipcMain, dialog, app} from 'electron';
 import {EventEmitter} from 'events';
 import PCancelable, {CancelError, OnCancelFunction} from 'p-cancelable';
 import Conversion from './conversion';
-import {InstalledPlugin} from './plugins/plugin';
 import {ShareService} from './plugins/service';
-import {ShareServiceContext} from './plugins/service-context';
+import {ShareServiceContext, type PluginContextRef} from './plugins/service-context';
+import {builtinSavePlugin} from './export/builtin-save-plugin';
 import {prettifyFormat} from './utils/formats';
 import {setExportMenuItemState} from './menus/utils';
 import {Video} from './video';
 import {ConversionOptions, ExportState, ExportStatus, Format, CreateExportOptions} from './common/types';
 import {showError} from './utils/errors';
 import TypedEventEmitter from 'typed-emitter';
-import {plugins} from './plugins';
-import {getSavePath} from './plugins/built-in/save-file-plugin';
+import {getSavePath} from './export/save-to-disk';
 import path from 'path';
 import {ensureDockIsShowingSync} from './utils/dock';
 import {windowManager} from './windows/manager';
 
 export interface ExportOptions {
-  plugin: InstalledPlugin;
+  plugin: PluginContextRef;
   service: ShareService;
   extras: Record<string, unknown>;
 }
@@ -266,15 +265,12 @@ export const setUpExportsListeners = () => {
       extras.targetFilePath = getSavePath(format, video.title);
     }
 
-    const exportPlugin = plugins.sharePlugins.find(plugin => {
-      return plugin.name === pluginOptions.share.pluginName;
-    });
-
-    const exportService = exportPlugin?.shareServices.find(service => {
+    const exportPlugin = builtinSavePlugin;
+    const exportService = exportPlugin.shareServices.find(service => {
       return service.title === pluginOptions.share.serviceTitle;
-    });
+    }) ?? exportPlugin.shareServices[0];
 
-    if (!exportPlugin || !exportService) {
+    if (!exportService) {
       return;
     }
 

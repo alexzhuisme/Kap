@@ -20,7 +20,6 @@ const retinaInput = path.resolve(__dirname, 'fixtures', 'input@2x.mp4');
 
 mockImport('../common/analytics', 'analytics');
 mockImport('../plugins/service-context', 'service-context');
-mockImport('../plugins', 'plugins');
 const {settings} = mockImport('../common/settings', 'settings');
 
 import {convertTo} from '../main/converters';

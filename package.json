@@ -88,8 +88,7 @@
     "tempy": "^1.0.0",
     "tmp": "^0.2.0",
     "unstated": "^1.2.0",
-    "unstated-next": "^1.1.0",
-    "yarn": "^1.22.10"
+    "unstated-next": "^1.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",

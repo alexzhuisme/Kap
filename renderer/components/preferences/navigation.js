@@ -3,17 +3,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import {connect, PreferencesContainer} from '../../containers';
-import {SettingsIcon, PluginsIcon} from '../../vectors';
-
-import {handleKeyboardActivation} from '../../utils/inputs';
+import {SettingsIcon} from '../../vectors';
 
 const CATEGORIES = [
   {
     name: 'general',
     icon: SettingsIcon
-  }, {
-    name: 'plugins',
-    icon: PluginsIcon
   }
 ];
 
@@ -35,7 +30,6 @@ class PreferencesNavigation extends React.Component {
                 tabIndex={0}
                 className={classNames('nav-item', {active: category === name})}
                 onClick={() => selectCategory(name)}
-                onKeyDown={handleKeyboardActivation(() => selectCategory(name))}
               >
                 <Icon
                   size="2.4rem"
@@ -52,6 +46,7 @@ class PreferencesNavigation extends React.Component {
             padding: 0 16px;
             display: flex;
             align-items: center;
+            -webkit-app-region: no-drag;
           }
 
           .nav-item {

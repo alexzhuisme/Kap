@@ -78,7 +78,7 @@ const useOptions = () => {
         plugin.title === sharePlugin.serviceTitle &&
         (plugin.apps?.some(app => app.url === sharePlugin.app?.url) ?? true)
       );
-    }) ?? formatOption.plugins.find(plugin => plugin.pluginName !== '_openWith');
+    }) ?? formatOption.plugins[0];
 
     setFormat(formatName);
     setSharePlugin({
@@ -99,7 +99,7 @@ const useOptions = () => {
 
     setFormat(formatName);
 
-    const firstPlugin = firstFormat.plugins.find(plugin => plugin.pluginName !== '_openWith');
+    const firstPlugin = firstFormat.plugins[0];
 
     setSharePlugin(firstPlugin && {
       pluginName: firstPlugin.pluginName,

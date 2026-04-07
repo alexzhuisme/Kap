@@ -1,7 +1,6 @@
 import {Menu} from 'electron';
 import {MenuItemId, MenuOptions} from './utils';
 import {getAboutMenuItem, getExportHistoryMenuItem, getOpenFileMenuItem, getPreferencesMenuItem, getSendFeedbackMenuItem} from './common';
-import {plugins} from '../plugins';
 import {getAudioDevices, getDefaultInputDevice} from '../utils/devices';
 import {settings} from '../common/settings';
 import {defaultInputDeviceId} from '../common/constants';
@@ -16,7 +15,6 @@ export const getCogMenuTemplate = async (): Promise<MenuOptions> => [
   {
     type: 'separator'
   },
-  getPluginsItem(),
   await getMicrophoneItem(),
   {
     type: 'separator'
@@ -35,24 +33,6 @@ export const getCogMenuTemplate = async (): Promise<MenuOptions> => [
     accelerator: 'Command+Q'
   }
 ];
-
-const getPluginsItem = (): MenuOptions[number] => {
-  const items = plugins.recordingPlugins.flatMap(plugin =>
-    plugin.recordServicesWithStatus.map(service => ({
-      label: service.title,
-      type: 'checkbox' as const,
-      checked: service.isEnabled,
-      click: async () => service.setEnabled(!service.isEnabled)
-    }))
-  );
-
-  return {
-    id: MenuItemId.plugins,
-    label: 'Plugins',
-    submenu: items,
-    visible: items.length > 0
-  };
-};
 
 const getMicrophoneItem = async (): Promise<MenuOptions[number]> => {
   const devices = await getAudioDevices();

@@ -2,21 +2,28 @@ import {app, clipboard} from 'electron';
 import Store from 'electron-store';
 import got, {GotFn, GotPromise} from 'got';
 import {ApertureOptions, Format} from '../common/types';
-import {InstalledPlugin} from './plugin';
 import {addPluginPromise} from '../utils/deep-linking';
 import {notify} from '../utils/notifications';
 import PCancelable from 'p-cancelable';
 import {getFormatExtension} from '../common/constants';
 
+/** Minimal plugin shape for export/recording UI (built-in save target only). */
+export type PluginContextRef = {
+  name: string;
+  prettyName: string;
+  isBuiltIn: boolean;
+  config: Store;
+};
+
 interface ServiceContextOptions {
-  plugin: InstalledPlugin;
+  plugin: PluginContextRef;
 }
 
 class ServiceContext {
   requests: Array<GotPromise<any>> = [];
   config: Store;
 
-  private readonly plugin: InstalledPlugin;
+  private readonly plugin: PluginContextRef;
 
   constructor(options: ServiceContextOptions) {
     this.plugin = options.plugin;
@@ -52,7 +59,7 @@ class ServiceContext {
   };
 }
 
-interface ShareServiceContextOptions extends ServiceContextOptions {
+export interface ShareServiceContextOptions extends ServiceContextOptions {
   onProgress: (text: string, percentage: number) => void;
   filePath: (options?: {fileType?: Format}) => Promise<string>;
   format: Format;
@@ -101,7 +108,7 @@ export class ShareServiceContext extends ServiceContext {
   };
 }
 
-interface EditServiceContextOptions extends ServiceContextOptions {
+export interface EditServiceContextOptions extends ServiceContextOptions {
   onProgress: (text: string, percentage: number) => void;
   inputPath: string;
   outputPath: string;

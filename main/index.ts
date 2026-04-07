@@ -8,7 +8,6 @@ import './windows/load';
 import './utils/sentry';
 
 import {settings} from './common/settings';
-import {plugins} from './plugins';
 import {initializeTray, setRendererReady} from './tray';
 import {initializeDevices} from './utils/devices';
 import {initializeAnalytics, track} from './common/analytics';
@@ -41,16 +40,6 @@ app.on('open-file', (event, path) => {
     filesToOpen.push(path);
   }
 });
-
-const initializePlugins = async () => {
-  if (app.isPackaged) {
-    try {
-      await plugins.upgrade();
-    } catch (error) {
-      console.log(error);
-    }
-  }
-};
 
 const checkForUpdates = () => {
   if (!app.isPackaged) {
@@ -100,11 +89,7 @@ const checkForUpdates = () => {
   initializeAnalytics();
   setUpExportsListeners();
 
-  // Prepare the Next.js renderer and plugin upgrades in parallel
-  await Promise.all([
-    prepareRenderer('./renderer'),
-    initializePlugins()
-  ]);
+  await prepareRenderer('./renderer');
 
   setRendererReady();
 

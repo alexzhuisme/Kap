@@ -4,15 +4,11 @@ import PropTypes from 'prop-types';
 import {connect, PreferencesContainer} from '../../../containers';
 
 import General from './general';
-import Plugins from './plugins';
 
 const CATEGORIES = [
   {
     name: 'general',
     Component: General
-  }, {
-    name: 'plugins',
-    Component: Plugins
   }
 ];
 

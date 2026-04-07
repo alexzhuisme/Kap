@@ -14,13 +14,11 @@ const test = testAny as TestInterface<{
 import {mockImport, mockModule} from './helpers/mocks';
 
 mockImport('./windows/manager', 'window-manager');
-mockImport('./plugins', 'plugins');
 mockImport('./utils/sentry', 'sentry');
 mockImport('../common/analytics', 'analytics');
 
 import {shell} from './mocks/electron';
 import * as dialog from './mocks/dialog';
-import {plugins} from './mocks/plugins';
 import Sentry from './mocks/sentry';
 import {windowManager} from './mocks/window-manager';
 
@@ -81,30 +79,12 @@ test('`hasActiveRecording()` with no recording', async t => {
 });
 
 test('`hasActiveRecording()` with playable recording', async t => {
-  const fakeService = {
-    title: 'Fake Service',
-    cleanUp: sinon.fake()
-  };
-
-  const fakePlugin = {
-    name: 'kap-fake-plugin',
-    recordServices: [fakeService]
-  };
-
-  plugins.recordingPlugins = [fakePlugin];
-
   recordingHistory.set('activeRecording', {
     filePath: incomplete,
     name: 'Incomplete',
     date: new Date().toISOString(),
     apertureOptions: {},
-    plugins: {
-      'kap-fake-plugin': {
-        'Fake Service': {
-          some: 'state'
-        }
-      }
-    }
+    plugins: {}
   });
 
   const checkPromise = hasActiveRecording();
@@ -124,7 +104,6 @@ test('`hasActiveRecording()` with playable recording', async t => {
   t.true(await checkPromise);
 
   t.false(recordingHistory.has('activeRecording'));
-  t.true(fakeService.cleanUp.calledOnceWith({some: 'state'}));
   t.deepEqual(
     recordingHistory.get('recordings'),
     [

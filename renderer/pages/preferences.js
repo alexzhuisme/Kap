@@ -14,10 +14,6 @@ export default class PreferencesPage extends React.Component {
   state = {overlay: false};
 
   componentDidMount() {
-    window.kap.ipc.on('open-plugin-config', name => {
-      preferencesContainer.openPluginsConfig(name);
-    });
-
     window.kap.ipc.on('options', options => {
       preferencesContainer.setNavigation(options);
     });

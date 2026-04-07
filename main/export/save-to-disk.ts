@@ -1,11 +1,13 @@
 'use strict';
 
-import {BrowserWindow, dialog, app} from 'electron';
-import {ShareServiceContext} from '../service-context';
-import {settings} from '../../common/settings';
+import {BrowserWindow, dialog, app, Notification, shell} from 'electron';
+import {ShareServiceContext} from '../plugins/service-context';
+import {settings} from '../common/settings';
 import makeDir from 'make-dir';
-import {Format} from '../../common/types';
+import {Format} from '../common/types';
 import path from 'path';
+import cpFile from 'cp-file';
+import {ShareService} from '../plugins/service';
 
 const extensionByFormat: Record<Format, string> = {
   [Format.gif]: 'gif',
@@ -29,48 +31,6 @@ export const getSavePath = (format: Format, fileName: string): string => {
   const ext = extensionByFormat[format] ?? 'mp4';
   return path.join(getSaveDir(), `${baseName}.${ext}`);
 };
-
-const {Notification, shell} = require('electron');
-const cpFile = require('cp-file');
-
-const action = async (context: ShareServiceContext & {targetFilePath: string}) => {
-  const temporaryFilePath = await context.filePath();
-
-  // Execution has been interrupted
-  if (context.isCanceled) {
-    return;
-  }
-
-  // Copy the file, so we can still use the temporary source for future exports
-  // The temporary file will be cleaned up on app exit, or automatic system cleanup
-  await cpFile(temporaryFilePath, context.targetFilePath);
-
-  const notification = new Notification({
-    title: 'File saved successfully!',
-    body: 'Click to show the file in Finder'
-  });
-
-  notification.on('click', () => {
-    shell.showItemInFolder(context.targetFilePath);
-  });
-
-  notification.show();
-};
-
-const saveFile = {
-  title: 'Save to Disk',
-  formats: [
-    'gif',
-    'mp4',
-    'webm',
-    'apng',
-    'av1',
-    'hevc'
-  ],
-  action
-};
-
-export const shareServices = [saveFile];
 
 const filterMap = new Map([
   [Format.mp4, [{name: 'Movies', extensions: ['mp4']}]],
@@ -107,4 +67,39 @@ export const askForTargetFilePath = async (
   }
 
   return undefined;
+};
+
+const action = async (context: ShareServiceContext) => {
+  const targetFilePath = (context as ShareServiceContext & {targetFilePath: string}).targetFilePath;
+  const temporaryFilePath = await context.filePath();
+
+  if (context.isCanceled) {
+    return;
+  }
+
+  await cpFile(temporaryFilePath, targetFilePath);
+
+  const notification = new Notification({
+    title: 'File saved successfully!',
+    body: 'Click to show the file in Finder'
+  });
+
+  notification.on('click', () => {
+    shell.showItemInFolder(targetFilePath);
+  });
+
+  notification.show();
+};
+
+export const saveToDiskShareService: ShareService = {
+  title: 'Save to Disk',
+  formats: [
+    Format.gif,
+    Format.mp4,
+    Format.webm,
+    Format.apng,
+    Format.av1,
+    Format.hevc
+  ],
+  action
 };

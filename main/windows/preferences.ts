@@ -59,15 +59,39 @@ const openPrefsWindow = async (options?: PreferencesWindowOptions) => {
     sendToRenderer(prefsWindow, 'options', options);
   }
 
-  sendToRenderer(prefsWindow, 'mount');
+  const win = prefsWindow;
+
+  sendToRenderer(win, 'mount');
 
   await new Promise<void>(resolve => {
-    ipcMain.handleOnce('preferences-ready', () => {
+    // A previous open may have left a handler if the window closed before the renderer
+    // invoked `preferences-ready` (handleOnce only unregisters after the handler runs once).
+    ipcMain.removeHandler('preferences-ready');
+
+    let settled = false;
+    const finish = () => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      ipcMain.removeHandler('preferences-ready');
+      win.removeListener('closed', onClosed);
       resolve();
-    });
+    };
+
+    const onClosed = () => {
+      finish();
+    };
+
+    ipcMain.handleOnce('preferences-ready', finish);
+    win.once('closed', onClosed);
   });
 
-  prefsWindow.show();
+  if (prefsWindow && !prefsWindow.isDestroyed()) {
+    prefsWindow.show();
+  }
+
   return prefsWindow;
 };
 
