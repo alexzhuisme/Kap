@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import tildify from 'tildify';
 
 import {connect, PreferencesContainer} from '../../../containers';
+import {tildifyPath} from '../../../utils/tildify-path';
 
 import Item from '../item';
 import Switch from '../item/switch';
@@ -53,7 +53,8 @@ class General extends React.Component {
       category,
       lossyCompression,
       shortcuts,
-      shortcutMap
+      shortcutMap,
+      homePath
     } = this.props;
 
     const {showCursorSupported} = this.state;
@@ -63,7 +64,7 @@ class General extends React.Component {
       value: device.id
     }));
 
-    const kapturesDirPath = tildify(kapturesDir);
+    const kapturesDirPath = tildifyPath(kapturesDir, homePath);
     const tabIndex = category === 'general' ? 0 : -1;
     const fpsOptions = [{label: '30 FPS', value: false}, {label: '60 FPS', value: true}];
 
@@ -215,6 +216,7 @@ General.propTypes = {
   audioDevices: PropTypes.array,
   recordAudio: PropTypes.bool,
   kapturesDir: PropTypes.string,
+  homePath: PropTypes.string,
   openOnStartup: PropTypes.bool,
   allowAnalytics: PropTypes.bool,
   loopExports: PropTypes.bool,
@@ -239,6 +241,7 @@ export default connect(
     audioInputDeviceId,
     audioDevices,
     kapturesDir,
+    homePath,
     openOnStartup,
     allowAnalytics,
     loopExports,
@@ -255,6 +258,7 @@ export default connect(
     audioInputDeviceId,
     audioDevices,
     kapturesDir,
+    homePath,
     openOnStartup,
     allowAnalytics,
     loopExports,

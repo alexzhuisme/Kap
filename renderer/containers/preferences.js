@@ -1,5 +1,7 @@
 import {Container} from 'unstated';
 
+import {comparePluginsByPrettyName, comparePluginsForDiscover} from '../utils/compare-plugins';
+
 const defaultInputDeviceId = 'asd';
 
 const SETTINGS_ANALYTICS_BLACKLIST = ['kapturesDir'];
@@ -10,20 +12,22 @@ export default class PreferencesContainer extends Container {
     tab: 'discover',
     isMounted: false,
     shortcutMap: {},
-    shortcuts: {}
+    shortcuts: {},
+    homePath: ''
   };
 
   mount = async setOverlay => {
     this.setOverlay = setOverlay;
 
-    const [settingsStore, shortcuts, pluginsInstalled, loginItemSettings] = await Promise.all([
+    const [settingsStore, shortcuts, pluginsInstalled, loginItemSettings, homePath] = await Promise.all([
       window.kap.ipc.invoke('settings:getAll'),
       window.kap.ipc.invoke('settings:getShortcuts'),
       window.kap.ipc.invoke('plugins:getInstalled'),
-      window.kap.app.getLoginItemSettings()
+      window.kap.app.getLoginItemSettings(),
+      window.kap.app.getPath('home')
     ]);
 
-    const sortedPlugins = pluginsInstalled.sort((a, b) => a.prettyName.localeCompare(b.prettyName));
+    const sortedPlugins = pluginsInstalled.sort(comparePluginsByPrettyName);
 
     this.fetchFromNpm();
 
@@ -33,7 +37,8 @@ export default class PreferencesContainer extends Container {
       openOnStartup: loginItemSettings.openAtLogin,
       pluginsInstalled: sortedPlugins,
       isMounted: true,
-      shortcutMap: shortcuts
+      shortcutMap: shortcuts,
+      homePath
     });
 
     if (settingsStore.recordAudio) {
@@ -129,13 +134,7 @@ export default class PreferencesContainer extends Container {
       const plugins = await window.kap.ipc.invoke('plugins:getFromNpm');
       this.setState({
         npmError: false,
-        pluginsFromNpm: plugins.sort((a, b) => {
-          if (a.isCompatible !== b.isCompatible) {
-            return b.isCompatible - a.isCompatible;
-          }
-
-          return a.prettyName.localeCompare(b.prettyName);
-        })
+        pluginsFromNpm: plugins.sort(comparePluginsForDiscover)
       });
 
       if (this.state.target) {
@@ -165,7 +164,7 @@ export default class PreferencesContainer extends Container {
       this.setState({
         pluginBeingInstalled: undefined,
         pluginsFromNpm: pluginsFromNpm.filter(p => p.name !== name),
-        pluginsInstalled: [result, ...pluginsInstalled].sort((a, b) => a.prettyName.localeCompare(b.prettyName))
+        pluginsInstalled: [result, ...pluginsInstalled].sort(comparePluginsByPrettyName)
       });
     } else {
       this.setState({
@@ -181,7 +180,7 @@ export default class PreferencesContainer extends Container {
       const plugin = await window.kap.ipc.invoke('plugins:uninstall', name);
       this.setState({
         pluginsInstalled: pluginsInstalled.filter(p => p.name !== name),
-        pluginsFromNpm: [plugin, ...pluginsFromNpm].sort((a, b) => a.prettyName.localeCompare(b.prettyName)),
+        pluginsFromNpm: [plugin, ...pluginsFromNpm].sort(comparePluginsByPrettyName),
         pluginBeingUninstalled: null,
         onTransitionEnd: null
       });

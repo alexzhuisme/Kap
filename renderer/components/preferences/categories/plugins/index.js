@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import {connect, PreferencesContainer} from '../../../../containers';
+import {comparePluginsForDiscover} from '../../../../utils/compare-plugins';
 import {handleKeyboardActivation} from '../../../../utils/inputs';
 import Category from '../category';
 import Tab, {EmptyTab} from './tab';
@@ -33,13 +34,7 @@ class Plugins extends React.Component {
     const allPlugins = [
       ...pluginsInstalled,
       ...pluginsFromNpm
-    ].sort((a, b) => {
-      if (a.isCompatible !== b.isCompatible) {
-        return b.isCompatible - a.isCompatible;
-      }
-
-      return a.prettyName.localeCompare(b.prettyName);
-    });
+    ].sort(comparePluginsForDiscover);
 
     return (
       <Category>

@@ -3,7 +3,15 @@ import * as Sentry from '@sentry/browser';
 
 const SENTRY_PUBLIC_DSN = 'https://2dffdbd619f34418817f4db3309299ce@sentry.io/255536';
 
-class SentryErrorBoundary extends React.Component<{children: React.ReactNode}> {
+type SentryBoundaryState = {error?: Error};
+
+class SentryErrorBoundary extends React.Component<{children: React.ReactNode}, SentryBoundaryState> {
+  state: SentryBoundaryState = {};
+
+  static getDerivedStateFromError(error: Error): SentryBoundaryState {
+    return {error};
+  }
+
   async componentDidMount() {
     const isDev = await window.kap.ipc.invoke('kap:app:isDevelopment');
     const allowAnalytics = await window.kap.ipc.invoke('settings:get', 'allowAnalytics');
@@ -28,6 +36,22 @@ class SentryErrorBoundary extends React.Component<{children: React.ReactNode}> {
   }
 
   render() {
+    if (this.state.error) {
+      return (
+        <div
+          style={{
+            padding: 24,
+            color: 'var(--title-color, #000)',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif',
+            fontSize: 14
+          }}
+        >
+          Something went wrong while loading this window. You can try again or report the issue if it
+          persists.
+        </div>
+      );
+    }
+
     return this.props.children;
   }
 }
