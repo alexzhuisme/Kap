@@ -4,6 +4,7 @@ import {track} from './common/analytics';
 import {showError} from './utils/errors';
 import {getAudioDevices, getDefaultInputDevice, getSelectedInputDeviceId} from './utils/devices';
 import {startRecording, stopRecording, pauseRecording, resumeRecording} from './aperture';
+import {closeBrowserWindowSafely, exitFullScreenIfNeeded} from './utils/fullscreen';
 
 const getWindowFromEvent = (event: Electron.IpcMainInvokeEvent): BrowserWindow | null =>
   BrowserWindow.fromWebContents(event.sender);
@@ -58,7 +59,12 @@ export function sendToRenderer(window: BrowserWindow, channel: string, data?: an
 
 export const registerIpcHandlers = () => {
   // --- Window operations ---
-  ipcMain.handle('kap:window:close', event => getWindowFromEvent(event)?.close());
+  ipcMain.handle('kap:window:close', event => {
+    closeBrowserWindowSafely(getWindowFromEvent(event));
+  });
+
+  ipcMain.handle('kap:window:exitFullScreenIfNeeded', async event =>
+    exitFullScreenIfNeeded(getWindowFromEvent(event)));
   ipcMain.handle('kap:window:minimize', event => getWindowFromEvent(event)?.minimize());
   ipcMain.handle('kap:window:maximize', event => getWindowFromEvent(event)?.maximize());
   ipcMain.handle('kap:window:show', event => getWindowFromEvent(event)?.show());

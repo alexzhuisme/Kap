@@ -20,6 +20,7 @@ export const useEditorWindowSizeEffect = (isConversionWindowState: boolean) => {
 
       if (isConversionWindowState) {
         previousWindowSizeRef.current = {width: bounds.width, height: bounds.height};
+        await window.kap.window.exitFullScreenIfNeeded();
         await window.kap.window.setBounds(resizeKeepingCenter(bounds, {width: CONVERSION_WIDTH, height: CONVERSION_HEIGHT}), true);
         await window.kap.window.setResizable(false);
         await window.kap.window.setFullScreenable(false);

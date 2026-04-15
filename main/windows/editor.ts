@@ -5,6 +5,7 @@ import {MenuItemId} from '../menus/utils';
 import {BrowserWindow, dialog, app} from 'electron';
 import fs from 'fs';
 import {windowManager} from './manager';
+import {exitFullScreenIfNeeded} from '../utils/fullscreen';
 
 const pify = require('pify');
 
@@ -88,27 +89,32 @@ const open = async (video: Video) => {
       event.preventDefault();
       editorsWithNotSavedDialogs.set(video.filePath, true);
 
-      void dialog
-        .showMessageBox(editorWindow, {
-          type: 'question',
-          buttons: [
-            'Discard',
-            'Cancel'
-          ],
-          defaultId: 0,
-          cancelId: 1,
-          message: 'Are you sure that you want to discard this recording?',
-          detail: 'You will no longer be able to edit and export the original recording.'
-        })
-        .then(({response}) => {
+      void (async () => {
+        try {
+          await exitFullScreenIfNeeded(editorWindow);
+          if (editorWindow.isDestroyed()) {
+            return;
+          }
+
+          const {response} = await dialog.showMessageBox(editorWindow, {
+            type: 'question',
+            buttons: [
+              'Discard',
+              'Cancel'
+            ],
+            defaultId: 0,
+            cancelId: 1,
+            message: 'Are you sure that you want to discard this recording?',
+            detail: 'You will no longer be able to edit and export the original recording.'
+          });
           if (response === 0) {
             allowCloseWithoutConfirm = true;
             editorWindow.close();
           }
-        })
-        .finally(() => {
+        } finally {
           editorsWithNotSavedDialogs.delete(video.filePath);
-        });
+        }
+      })();
     });
   }
 

@@ -57,6 +57,8 @@ const kapApi = {
       ipcRenderer.invoke('kap:window:setResizable', resizable),
     setFullScreenable: async (fullscreenable: boolean): Promise<void> =>
       ipcRenderer.invoke('kap:window:setFullScreenable', fullscreenable),
+    exitFullScreenIfNeeded: async (): Promise<void> =>
+      ipcRenderer.invoke('kap:window:exitFullScreenIfNeeded'),
     setIgnoreMouseEvents: async (ignore: boolean, options?: any): Promise<void> =>
       ipcRenderer.invoke('kap:window:setIgnoreMouseEvents', ignore, options),
     isVisible: async (): Promise<boolean> => ipcRenderer.invoke('kap:window:isVisible')

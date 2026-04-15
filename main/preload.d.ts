@@ -22,6 +22,7 @@ interface KapWindow {
   getContentSize(): Promise<number[]>;
   setResizable(resizable: boolean): Promise<void>;
   setFullScreenable(fullscreenable: boolean): Promise<void>;
+  exitFullScreenIfNeeded(): Promise<void>;
   setIgnoreMouseEvents(ignore: boolean, options?: {forward?: boolean}): Promise<void>;
   isVisible(): Promise<boolean>;
 }
