@@ -1,12 +1,15 @@
 import {BrowserWindow} from 'electron';
 
+/** Fullscreen sheet/close issues are macOS-specific; skip work on other platforms. */
+const isMacOS = process.platform === 'darwin';
+
 /**
  * Leave native fullscreen. macOS sheet dialogs (e.g. `showMessageBox` with a parent window)
  * are often invisible while the parent is fullscreen; exiting first fixes that.
  * Closing while still fullscreen can also hang — callers should await this before `close()`.
  */
 export const exitFullScreenIfNeeded = async (window: BrowserWindow | null | undefined): Promise<void> => {
-  if (!window || window.isDestroyed() || !window.isFullScreen()) {
+  if (!isMacOS || !window || window.isDestroyed() || !window.isFullScreen()) {
     return;
   }
 
@@ -39,7 +42,7 @@ export const closeBrowserWindowSafely = (window: BrowserWindow | null | undefine
     return;
   }
 
-  if (!window.isFullScreen()) {
+  if (!isMacOS || !window.isFullScreen()) {
     window.close();
     return;
   }
