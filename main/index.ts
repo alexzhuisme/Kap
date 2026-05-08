@@ -82,8 +82,6 @@ const checkForUpdates = () => {
   // Ensure the app is in the Applications folder
   enforceMacOSAppLocation();
 
-  // Show tray icon and register shortcuts immediately so the app feels responsive
-  initializeTray();
   initializeGlobalAccelerators();
   initializeDevices();
   initializeAnalytics();
@@ -92,6 +90,11 @@ const checkForUpdates = () => {
   await prepareRenderer('./renderer');
 
   setRendererReady();
+
+  // Register the tray after first paint so this NSStatusItem is created late in startup.
+  // On macOS, extras are ordered by insertion time; later registration sits farther right
+  // (closer to the system controls) than icons created earlier in this launch sequence.
+  initializeTray();
 
   if (!app.isDefaultProtocolClient('kap')) {
     app.setAsDefaultProtocolClient('kap');

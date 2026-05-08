@@ -4,7 +4,7 @@ import Options from './options';
 import useEditorWindowState from 'hooks/editor/use-editor-window-state';
 import {useState, useRef, useEffect, useCallback} from 'react';
 
-const TOP_BAR_HIDE_DELAY_MS = 200;
+const TOP_BAR_HIDE_DELAY_MS = 320;
 
 const EditorPreview = () => {
   const {title = 'Editor'} = useEditorWindowState();
@@ -18,18 +18,58 @@ const EditorPreview = () => {
     }
   }, []);
 
-  const onTopZoneEnter = useCallback(() => {
-    clearHideTimer();
-    setTopBarVisible(true);
-  }, [clearHideTimer]);
-
-  const onTopZoneLeave = useCallback(() => {
+  const scheduleHide = useCallback(() => {
     clearHideTimer();
     hideTimerRef.current = setTimeout(() => {
       setTopBarVisible(false);
       hideTimerRef.current = undefined;
     }, TOP_BAR_HIDE_DELAY_MS);
   }, [clearHideTimer]);
+
+  const onTopZoneEnter = useCallback(() => {
+    clearHideTimer();
+    setTopBarVisible(true);
+  }, [clearHideTimer]);
+
+  const onTopZoneLeave = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    // While a mouse button is held (window drag in progress), Chromium fires bogus
+    // `mouseleave` as the window moves under the cursor — that would hide the bar
+    // mid-drag and feel broken.
+    if (event.buttons !== 0) {
+      return;
+    }
+
+    // Once `.title-bar.is-visible` becomes a drag region, moving onto it triggers
+    // `mouseleave` on this strip even though the cursor is still inside its bounds.
+    // Treat that as "still hovering" so the bar doesn't flicker.
+    const rect = event.currentTarget.getBoundingClientRect();
+    const stillInside =
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom;
+
+    if (stillInside) {
+      return;
+    }
+
+    scheduleHide();
+  }, [scheduleHide]);
+
+  // Safety net: when the user is dragging and lifts the button outside the strip,
+  // re-evaluate visibility instead of leaving the bar stuck open.
+  useEffect(() => {
+    const onMouseUp = () => {
+      if (!topBarVisible) {
+        return;
+      }
+
+      scheduleHide();
+    };
+
+    window.addEventListener('mouseup', onMouseUp);
+    return () => window.removeEventListener('mouseup', onMouseUp);
+  }, [topBarVisible, scheduleHide]);
 
   useEffect(() => () => clearHideTimer(), [clearHideTimer]);
 
@@ -68,8 +108,10 @@ const EditorPreview = () => {
           overflow: hidden;
         }
 
-        /* Top strip uses JS hover (not CSS :hover). Visible title bar uses drag so the
-           window can be moved; traffic lights keep no-drag in traffic-lights.tsx. */
+        /* Hover detection requires DOM mouse events to fire reliably, which they only
+           do over a no-drag region. The window itself is still draggable from the video
+           area (.cover-window is drag in editor.tsx), and from the visible glass bar
+           below — so users always have a draggable surface. */
         .top-title-hover-zone {
           position: absolute;
           top: 0;

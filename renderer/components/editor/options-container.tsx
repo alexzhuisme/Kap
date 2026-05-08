@@ -18,6 +18,22 @@ type SharePlugin = {
 
 const isFormatMuted = (format: Format) => ['gif', 'apng'].includes(format);
 
+const EXPORT_FPS_CHOICES = [30, 60] as const;
+
+/** Picks 30 or 60, nearest to the hint (history / source fps). */
+const resolveExportFps = (originalFps: number, preferred?: number): number => {
+  const hint = preferred ?? Math.min(originalFps, 60);
+
+  let best = EXPORT_FPS_CHOICES[0];
+  for (const n of EXPORT_FPS_CHOICES) {
+    if (Math.abs(n - hint) < Math.abs(best - hint)) {
+      best = n;
+    }
+  }
+
+  return best;
+};
+
 const useOptions = () => {
   const {fps: originalFps} = useEditorWindowState();
   const {
@@ -86,7 +102,7 @@ const useOptions = () => {
       serviceTitle: selectedSharePlugin.title,
       app: selectedSharePlugin.apps ? sharePlugin.app : undefined
     });
-    updateFps(Math.min(originalFps, fpsHistory[formatName]), formatName);
+    updateFps(resolveExportFps(originalFps, fpsHistory[formatName]), formatName);
   };
 
   useEffect(() => {
@@ -106,7 +122,7 @@ const useOptions = () => {
       serviceTitle: firstPlugin.title
     });
 
-    updateFps(Math.min(originalFps, fpsHistory[formatName]), formatName);
+    updateFps(resolveExportFps(originalFps, fpsHistory[formatName]), formatName);
   }, [isLoading]);
 
   useEffect(() => {
