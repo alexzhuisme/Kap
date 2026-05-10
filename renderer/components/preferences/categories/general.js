@@ -2,11 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import {connect, PreferencesContainer} from '../../../containers';
-import {tildifyPath} from '../../../utils/tildify-path';
 
 import Item from '../item';
 import Switch from '../item/switch';
-import Button from '../item/button';
 import Select from '../item/select';
 import ShortcutInput from '../shortcut-input';
 
@@ -15,7 +13,6 @@ import Category from './category';
 class General extends React.Component {
   static defaultProps = {
     audioDevices: [],
-    kapturesDir: '',
     category: 'general'
   };
 
@@ -26,18 +23,11 @@ class General extends React.Component {
     this.setState({showCursorSupported});
   }
 
-  openKapturesDir = () => {
-    window.kap.shell.openPath(this.props.kapturesDir);
-  };
-
   render() {
     const {
-      kapturesDir,
       openOnStartup,
-      allowAnalytics,
       showCursor,
       highlightClicks,
-      record60fps,
       enableShortcuts,
       loopExports,
       toggleSetting,
@@ -46,15 +36,13 @@ class General extends React.Component {
       setAudioInputDeviceId,
       audioDevices,
       recordAudio,
-      pickKapturesDir,
       setOpenOnStartup,
       updateShortcut,
       toggleShortcuts,
       category,
       lossyCompression,
       shortcuts,
-      shortcutMap,
-      homePath
+      shortcutMap
     } = this.props;
 
     const {showCursorSupported} = this.state;
@@ -64,9 +52,7 @@ class General extends React.Component {
       value: device.id
     }));
 
-    const kapturesDirPath = tildifyPath(kapturesDir, homePath);
     const tabIndex = category === 'general' ? 0 : -1;
-    const fpsOptions = [{label: '30 FPS', value: false}, {label: '60 FPS', value: true}];
 
     return (
       <Category>
@@ -154,38 +140,11 @@ class General extends React.Component {
           </Item>
         }
         <Item
-          key="record60fps"
-          title="Capture frame rate"
-          subtitle="Increased FPS impacts performance and file size"
-        >
-          <Select
-            tabIndex={tabIndex}
-            options={fpsOptions}
-            selected={record60fps}
-            onSelect={value => toggleSetting('record60fps', value)}/>
-        </Item>
-        <Item
-          key="allowAnalytics"
-          title="Allow analytics"
-          subtitle="Help us improve Vello by sending anonymous usage stats"
-        >
-          <Switch tabIndex={tabIndex} checked={allowAnalytics} onClick={() => toggleSetting('allowAnalytics')}/>
-        </Item>
-        <Item
           key="openOnStartup"
           title="Start automatically"
           subtitle="Launch Vello on system startup"
         >
           <Switch tabIndex={tabIndex} checked={openOnStartup} onClick={setOpenOnStartup}/>
-        </Item>
-        <Item
-          key="pickKapturesDir"
-          title="Save to…"
-          subtitle={kapturesDirPath}
-          tooltip={kapturesDir}
-          onSubtitleClick={this.openKapturesDir}
-        >
-          <Button tabIndex={tabIndex} title="Choose" onClick={pickKapturesDir}/>
         </Item>
         <Item
           key="lossyCompression"
@@ -207,7 +166,6 @@ class General extends React.Component {
 General.propTypes = {
   showCursor: PropTypes.bool,
   highlightClicks: PropTypes.bool,
-  record60fps: PropTypes.bool,
   enableShortcuts: PropTypes.bool,
   toggleSetting: PropTypes.elementType.isRequired,
   toggleRecordAudio: PropTypes.elementType.isRequired,
@@ -215,12 +173,8 @@ General.propTypes = {
   setAudioInputDeviceId: PropTypes.elementType.isRequired,
   audioDevices: PropTypes.array,
   recordAudio: PropTypes.bool,
-  kapturesDir: PropTypes.string,
-  homePath: PropTypes.string,
   openOnStartup: PropTypes.bool,
-  allowAnalytics: PropTypes.bool,
   loopExports: PropTypes.bool,
-  pickKapturesDir: PropTypes.elementType.isRequired,
   setOpenOnStartup: PropTypes.elementType.isRequired,
   updateShortcut: PropTypes.elementType.isRequired,
   toggleShortcuts: PropTypes.elementType.isRequired,
@@ -235,15 +189,11 @@ export default connect(
   ({
     showCursor,
     highlightClicks,
-    record60fps,
     recordAudio,
     enableShortcuts,
     audioInputDeviceId,
     audioDevices,
-    kapturesDir,
-    homePath,
     openOnStartup,
-    allowAnalytics,
     loopExports,
     category,
     lossyCompression,
@@ -252,15 +202,11 @@ export default connect(
   }) => ({
     showCursor,
     highlightClicks,
-    record60fps,
     recordAudio,
     enableShortcuts,
     audioInputDeviceId,
     audioDevices,
-    kapturesDir,
-    homePath,
     openOnStartup,
-    allowAnalytics,
     loopExports,
     category,
     lossyCompression,
@@ -271,7 +217,6 @@ export default connect(
     toggleSetting,
     toggleRecordAudio,
     setAudioInputDeviceId,
-    pickKapturesDir,
     setOpenOnStartup,
     updateShortcut,
     toggleShortcuts
@@ -279,7 +224,6 @@ export default connect(
     toggleSetting,
     toggleRecordAudio,
     setAudioInputDeviceId,
-    pickKapturesDir,
     setOpenOnStartup,
     updateShortcut,
     toggleShortcuts
